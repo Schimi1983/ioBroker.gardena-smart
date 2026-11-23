@@ -52,7 +52,11 @@
       "irrigation",
       "water control",
       "sensor",
-      "garden"
+      "garden",
+      "mower",
+      "sileno",
+      "pump",
+      "local"
     ],
     "licenseInformation": {
       "type": "free",
@@ -82,7 +86,15 @@
       {
         "admin": ">=7.6.20"
       }
-    ]
+    ],
+    "docs": {
+      "en": [
+        "README.md"
+      ],
+      "de": [
+        "docs/de/README.md"
+      ]
+    }
   },
   "native": {
     "host": "",
