@@ -6,15 +6,15 @@
       "0.0.1": {
         "en": "Initial release: local connection to the GARDENA smart Gateway",
         "de": "Erste Version: lokale Verbindung zum GARDENA smart Gateway",
-        "ru": "Initial release",
-        "pt": "Initial release",
-        "nl": "Initial release",
-        "fr": "Initial release",
-        "it": "Initial release",
-        "es": "Initial release",
-        "pl": "Initial release",
-        "uk": "Initial release",
-        "zh-cn": "Initial release"
+        "ru": "Первая версия: локальное подключение к GARDENA smart Gateway",
+        "pt": "Primeira versão: ligação local ao GARDENA smart Gateway",
+        "nl": "Eerste versie: lokale verbinding met de GARDENA smart Gateway",
+        "fr": "Première version : connexion locale à la GARDENA smart Gateway",
+        "it": "Prima versione: connessione locale al GARDENA smart Gateway",
+        "es": "Primera versión: conexión local al GARDENA smart Gateway",
+        "pl": "Pierwsza wersja: lokalne połączenie z GARDENA smart Gateway",
+        "uk": "Перша версія: локальне підключення до GARDENA smart Gateway",
+        "zh-cn": "首个版本：本地连接 GARDENA smart Gateway"
       }
     },
     "titleLang": {
@@ -80,7 +80,7 @@
     ],
     "globalDependencies": [
       {
-        "admin": ">=7.0.23"
+        "admin": ">=7.6.17"
       }
     ]
   },
@@ -378,7 +378,7 @@
         "read": true,
         "write": false,
         "type": "boolean",
-        "role": "indicator.warning",
+        "role": "indicator.alarm",
         "def": false
       },
       "native": {}
