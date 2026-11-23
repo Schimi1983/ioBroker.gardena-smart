@@ -1,0 +1,51 @@
+{
+	"cli": true,
+	"target": "directory",
+	"adapterName": "gardena-smart",
+	"title": "GARDENA smart system",
+	"description": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
+	"keywords": ["gardena", "smart system", "irrigation", "water control", "sensor", "garden"],
+	"expert": "yes",
+	"features": ["adapter"],
+	"adminFeatures": [],
+	"type": "garden",
+	"startMode": "daemon",
+	"connectionType": "local",
+	"dataSource": "push",
+	"connectionIndicator": "yes",
+	"language": "TypeScript",
+	"nodeVersion": "22",
+	"adminUi": "json",
+	"tools": ["ESLint", "type checking", "Prettier"],
+	"eslintConfig": "official",
+	"i18n": "JSON",
+	"releaseScript": "yes",
+	"devServer": "no",
+	"indentation": "Tab",
+	"quotes": "single",
+	"authorName": "Schimi",
+	"authorGithub": "Schimi1983",
+	"authorEmail": "github@world-mg.de",
+	"gitRemoteProtocol": "HTTPS",
+	"gitCommit": "no",
+	"defaultBranch": "main",
+	"license": "MIT License",
+	"dependabot": "yes",
+	"adapterSettings": [
+		{
+			"key": "host",
+			"defaultValue": ""
+		},
+		{
+			"key": "port",
+			"defaultValue": 8443
+		},
+		{
+			"key": "password",
+			"defaultValue": ""
+		}
+	],
+	"contributors": "",
+	"replay": "/home/claude/gen/answers.json",
+	"creatorVersion": "3.1.5"
+}
