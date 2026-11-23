@@ -39,7 +39,6 @@ const COMMAND_PATTERNS = [
   "devices.*.parkUntilFurtherNotice",
   "devices.*.pause",
   "devices.*.operatingMode",
-  "devices.*.pauseSchedule",
   "info.trustNewCertificate",
   "cloud.refresh",
   "cloud.quota.reset"

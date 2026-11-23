@@ -33,6 +33,14 @@ function fakeAdapter(): { adapter: ioBroker.Adapter; states: Map<string, ioBroke
 			});
 		},
 		getObjectAsync: async (id: string) => objects.get(full(id)) ?? null,
+		getObjectViewAsync: async (_d: string, _s: string, p: { startkey: string; endkey: string }) => ({
+			rows: [...objects.entries()]
+				.filter(([k, o]) => o.type === 'state' && k >= p.startkey && k <= p.endkey)
+				.map(([id]) => ({ id })),
+		}),
+		delObjectAsync: async (id: string) => {
+			objects.delete(full(id));
+		},
 		setObjectNotExistsAsync: async () => undefined,
 		getStateAsync: async (id: string) => states.get(full(id)) ?? null,
 		setState: async (id: string, val: any, ack?: boolean) => {
@@ -191,5 +199,27 @@ describe('serialFromDeviceId', () => {
 		expect(serialFromDeviceId('3034F8EE90126D400003C557')).to.equal('00247127');
 		expect(serialFromDeviceId('3034F8EE9012980000057BA5')).to.equal('00359333');
 		expect(serialFromDeviceId('not-an-epc')).to.equal(null);
+	});
+});
+
+describe('DeviceManager cleanup', () => {
+	it('removes states the adapter no longer creates', async () => {
+		const { adapter } = fakeAdapter();
+		const dm = new DeviceManager(adapter, fakeClient([]), false);
+		await adapter.extendObject('devices.A.valve1.pauseSchedule', { type: 'state', common: { name: 'old' } });
+		await dm.sync(
+			new Map([
+				[
+					'A',
+					{
+						service: 'lemonbeatd' as const,
+						tree: {
+							device: { 0: { device_type: { vs: 'Water Control' }, model_number: { vs: '18869' } } },
+						},
+					},
+				],
+			]),
+		);
+		expect(await adapter.getObjectAsync('devices.A.valve1.pauseSchedule')).to.equal(null);
 	});
 });

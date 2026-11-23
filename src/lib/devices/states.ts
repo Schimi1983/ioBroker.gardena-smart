@@ -341,30 +341,6 @@ function addSchedulePause(t: Record<string, unknown>, nr: number, ch: string, st
 		value: pause ? pause.until : null,
 		ts: raw.ts,
 	});
-	states.push({
-		id: `${ch}.pauseSchedule`,
-		common: {
-			name: n(
-				'Pause schedules for hours (0 = resume, -1 = permanently)',
-				'Zeitpläne für Stunden anhalten (0 = fortsetzen, -1 = dauerhaft)',
-			),
-			type: 'number',
-			role: 'level',
-			unit: 'h',
-			min: -1,
-			max: 8760,
-			read: true,
-			write: true,
-			states: {
-				0: 'resume',
-				24: '1 day',
-				48: '2 days',
-				72: '3 days',
-				168: '1 week',
-				'-1': 'permanently',
-			},
-		},
-	});
 }
 
 /**

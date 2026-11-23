@@ -40,9 +40,8 @@ Der Adapter liest die Namen dann einmal am Tag (etwa 2 Abfragen). GARDENA erlaub
 | `valve1.active` | Bewässerung läuft (auch per Zeitplan oder Taste am Gerät) |
 | `valve1.source` | Wer bewässert: `manual`, `schedule` oder `off` |
 | `valve1.endTime` | Wann die Bewässerung endet (Zeitstempel, 0 = läuft nicht) – praktisch für „läuft noch 7 min“ |
-| `valve1.pauseSchedule` | Zeitpläne aus der GARDENA App anhalten: Stunden, `0` = fortsetzen, `-1` = dauerhaft |
 | `valve1.schedulePaused` / `valve1.pausedUntil` | Zeitpläne angehalten / bis wann |
-| `valve1.schedules` | Zeitpläne aus der GARDENA App (Start, Ende, Minuten) als JSON |
+| `valve1.schedules` | Zeitpläne, wie sie im Gerät stehen (Start, Ende, Minuten, Wochentage), als JSON. Im „GARDENA-unterstützten Modus“ kann die Cloud sie verschieben – du siehst die echten Zeiten. Zeitpläne bitte in der GARDENA App pausieren oder ändern: Die App bekommt Änderungen direkt am Gerät nicht mit. |
 | `valve1.buttonTime` | Bewässerungsdauer bei Tastendruck am Gerät (Minuten) |
 | `sensor.soilMoisture` | Bodenfeuchte in % |
 | `sensor.measure` | Drücken, um sofort zu messen |
