@@ -58,17 +58,18 @@ class CloudClient {
   /**
    * Reads all devices of all locations: 1 request for the list of locations plus 1 per location.
    *
+   * @param priority importance of the requests (automatic refreshes are `background`)
    * @returns devices with their names from the GARDENA app
    */
-  async listDevices() {
+  async listDevices(priority = "background") {
     var _a, _b, _c, _d, _e, _f;
-    const locations = await this.get("/locations");
+    const locations = await this.get("/locations", priority);
     const result = [];
     for (const loc of (_a = locations.data) != null ? _a : []) {
       if (!(loc == null ? void 0 : loc.id)) {
         continue;
       }
-      const detail = await this.get(`/locations/${encodeURIComponent(loc.id)}`);
+      const detail = await this.get(`/locations/${encodeURIComponent(loc.id)}`, priority);
       const locationName = (_d = (_c = (_b = detail.data) == null ? void 0 : _b.attributes) == null ? void 0 : _c.name) != null ? _d : "";
       for (const item of (_e = detail.included) != null ? _e : []) {
         if ((item == null ? void 0 : item.type) !== "COMMON" || !item.id) {
@@ -96,10 +97,13 @@ class CloudClient {
     this.token = void 0;
     this.tokenValidUntil = 0;
   }
-  async get(path) {
+  async get(path, priority) {
     var _a, _b;
-    if (!this.options.quota.allows(1)) {
-      throw new CloudQuotaError("Weekly limit of the GARDENA cloud reached (counted by the adapter)", null);
+    if (!this.options.quota.allowsPriority(priority)) {
+      throw new CloudQuotaError(
+        priority === "background" ? "Weekly limit of the GARDENA cloud almost reached, automatic requests paused (reserve for commands)" : "Weekly limit of the GARDENA cloud reached (counted by the adapter)",
+        null
+      );
     }
     const token = await this.getToken();
     this.options.quota.add();

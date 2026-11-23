@@ -7,7 +7,7 @@
  * refresh token, so a token is reused until shortly before it expires.
  */
 
-import type { QuotaCounter } from './quota';
+import type { QuotaCounter, RequestPriority } from './quota';
 
 /** Token endpoint of the Husqvarna Authentication API */
 export const AUTH_URL = 'https://api.authentication.husqvarnagroup.dev/v1/oauth2/token';
@@ -84,16 +84,17 @@ export class CloudClient {
 	/**
 	 * Reads all devices of all locations: 1 request for the list of locations plus 1 per location.
 	 *
+	 * @param priority importance of the requests (automatic refreshes are `background`)
 	 * @returns devices with their names from the GARDENA app
 	 */
-	public async listDevices(): Promise<CloudDevice[]> {
-		const locations = (await this.get('/locations')) as { data?: { id?: string }[] };
+	public async listDevices(priority: RequestPriority = 'background'): Promise<CloudDevice[]> {
+		const locations = (await this.get('/locations', priority)) as { data?: { id?: string }[] };
 		const result: CloudDevice[] = [];
 		for (const loc of locations.data ?? []) {
 			if (!loc?.id) {
 				continue;
 			}
-			const detail = (await this.get(`/locations/${encodeURIComponent(loc.id)}`)) as {
+			const detail = (await this.get(`/locations/${encodeURIComponent(loc.id)}`, priority)) as {
 				data?: { attributes?: { name?: string } };
 				included?: { id?: string; type?: string; attributes?: Record<string, { value?: unknown }> }[];
 			};
@@ -125,9 +126,14 @@ export class CloudClient {
 		this.tokenValidUntil = 0;
 	}
 
-	private async get(path: string): Promise<unknown> {
-		if (!this.options.quota.allows(1)) {
-			throw new CloudQuotaError('Weekly limit of the GARDENA cloud reached (counted by the adapter)', null);
+	private async get(path: string, priority: RequestPriority): Promise<unknown> {
+		if (!this.options.quota.allowsPriority(priority)) {
+			throw new CloudQuotaError(
+				priority === 'background'
+					? 'Weekly limit of the GARDENA cloud almost reached, automatic requests paused (reserve for commands)'
+					: 'Weekly limit of the GARDENA cloud reached (counted by the adapter)',
+				null,
+			);
 		}
 		const token = await this.getToken();
 		this.options.quota.add();

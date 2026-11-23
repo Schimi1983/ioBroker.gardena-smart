@@ -25,7 +25,7 @@ Die lokale Verbindung kennt die Namen nicht, die du deinen Geräten in der GARDE
 2. Eine neue Anwendung anlegen und **Authentication API** sowie **GARDENA smart system API** verbinden.
 3. **Application Key** und **Application Secret** in die Adapter-Einstellungen kopieren (Abschnitt *GARDENA-Cloud*).
 
-Der Adapter liest die Namen dann einmal am Tag (etwa 2 Abfragen). GARDENA erlaubt aktuell 1000 Abfragen pro Woche und Key (im Developer Portal unter „Usage quota“ zu sehen). Den Verbrauch siehst du unter `cloud.quota.*`; `cloud.quota.reset` setzt den Zähler auf 0, z. B. nach einem neuen Key. Namen, die du in ioBroker selbst geändert hast, bleiben erhalten.
+Der Adapter liest die Namen dann einmal am Tag (etwa 2 Abfragen). GARDENA erlaubt aktuell 1000 Abfragen pro Woche und Key (im Developer Portal unter „Usage quota“ zu sehen). Den Verbrauch siehst du unter `cloud.quota.*`; `cloud.quota.reset` setzt den Zähler auf 0, z. B. nach einem neuen Key. Namen, die du in ioBroker selbst geändert hast, bleiben erhalten. Automatische Abfragen stoppen, wenn nur noch 10 % des Limits übrig sind – so bleibt immer Luft für Abfragen, die du selbst auslöst. Lehnt GARDENA Abfragen ab, pausiert der Adapter (1 h, dann länger, höchstens 24 h), auch über einen Neustart hinweg.
 
 ## Wichtige Datenpunkte
 

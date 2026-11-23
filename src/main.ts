@@ -31,8 +31,10 @@ const COMMAND_PATTERNS = [
 
 /** Device names are read from the cloud once a day (2 requests per garden). */
 const CLOUD_REFRESH_MS = 24 * 60 * 60 * 1000;
-/** Waiting time after a "too many requests" answer without Retry-After */
+/** First waiting time after a "too many requests" answer without Retry-After, doubled on every repetition */
 const CLOUD_BLOCK_DEFAULT_MS = 60 * 60 * 1000;
+/** Longest waiting time after repeated "too many requests" answers */
+const CLOUD_BLOCK_MAX_MS = 24 * 60 * 60 * 1000;
 
 class GardenaSmart extends utils.Adapter {
 	private client: GatewayClient | undefined;
@@ -45,6 +47,8 @@ class GardenaSmart extends utils.Adapter {
 	private cloudTimer: ioBroker.Interval | undefined;
 	private quotaTimer: ioBroker.Interval | undefined;
 	private cloudBlockedUntil = 0;
+	/** consecutive "too many requests" answers (for the increasing waiting time) */
+	private cloudRejections = 0;
 	private cloudStarted = false;
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
@@ -187,7 +191,7 @@ class GardenaSmart extends utils.Adapter {
 			return;
 		}
 		if (id === `${this.namespace}.cloud.refresh`) {
-			await this.refreshCloud();
+			await this.refreshCloud(true);
 			return;
 		}
 		if (id === `${this.namespace}.cloud.quota.reset`) {
@@ -213,6 +217,11 @@ class GardenaSmart extends utils.Adapter {
 		this.quota = new QuotaCounter(Date.now, limit > 0 ? limit : WEEKLY_LIMIT);
 		const stored = await this.getStateAsync('cloud.quota.log');
 		this.quota.load(stored?.val);
+		// a pause from before the restart still applies
+		const blocked = await this.getStateAsync('cloud.blockedUntil');
+		if (typeof blocked?.val === 'number' && blocked.val > Date.now()) {
+			this.cloudBlockedUntil = blocked.val;
+		}
 		await this.updateQuotaStates();
 		// the rolling window moves on even without requests
 		this.quotaTimer = this.setInterval(() => void this.updateQuotaStates(), 60 * 60 * 1000);
@@ -229,8 +238,12 @@ class GardenaSmart extends utils.Adapter {
 		this.cloudTimer = this.setInterval(() => void this.refreshCloud(), CLOUD_REFRESH_MS);
 	}
 
-	/** Reads the device names from the GARDENA app (cloud) and takes them over. */
-	private async refreshCloud(): Promise<void> {
+	/**
+	 * Reads the device names from the GARDENA app (cloud) and takes them over.
+	 *
+	 * @param manual triggered by the user (may use the reserve kept for commands)
+	 */
+	private async refreshCloud(manual = false): Promise<void> {
 		if (!this.cloud) {
 			this.log.warn('Please enter App Key and App Secret in the settings to use the GARDENA cloud');
 			return;
@@ -242,7 +255,8 @@ class GardenaSmart extends utils.Adapter {
 			return;
 		}
 		try {
-			const list = await this.cloud.listDevices();
+			const list = await this.cloud.listDevices(manual ? 'command' : 'background');
+			this.cloudRejections = 0;
 			const names = new Map<string, string>();
 			for (const dev of list) {
 				if (dev.serial && dev.name) {
@@ -261,11 +275,18 @@ class GardenaSmart extends utils.Adapter {
 				this.log.error(`GARDENA cloud: ${err.message}`);
 			} else if (err instanceof CloudQuotaError) {
 				const summary = this.quota.summary();
-				const waitMs =
-					err.retryAfterMs ??
-					(summary.remaining === 0 && summary.nextRelease
-						? summary.nextRelease - Date.now()
-						: CLOUD_BLOCK_DEFAULT_MS);
+				let waitMs: number;
+				if (err.retryAfterMs !== null) {
+					// the cloud says how long to wait
+					waitMs = err.retryAfterMs;
+				} else if (summary.used > 0 && !this.quota.allowsPriority('background') && summary.nextRelease) {
+					// own counter: wait until the oldest request leaves the 7 day window
+					waitMs = summary.nextRelease - Date.now();
+				} else {
+					// rejected by the cloud without hint: 1 h, 2 h, 4 h … max. 24 h
+					this.cloudRejections++;
+					waitMs = Math.min(CLOUD_BLOCK_DEFAULT_MS * 2 ** (this.cloudRejections - 1), CLOUD_BLOCK_MAX_MS);
+				}
 				this.cloudBlockedUntil = Date.now() + Math.max(waitMs, 60_000);
 				await this.setState('cloud.blocked', true, true);
 				await this.setState('cloud.blockedUntil', this.cloudBlockedUntil, true);

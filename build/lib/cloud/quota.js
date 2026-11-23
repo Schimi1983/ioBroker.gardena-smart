@@ -18,6 +18,7 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var quota_exports = {};
 __export(quota_exports, {
+  COMMAND_RESERVE_PERCENT: () => COMMAND_RESERVE_PERCENT,
   QuotaCounter: () => QuotaCounter,
   WARNING_PERCENT: () => WARNING_PERCENT,
   WEEKLY_LIMIT: () => WEEKLY_LIMIT,
@@ -27,6 +28,7 @@ module.exports = __toCommonJS(quota_exports);
 const WEEKLY_LIMIT = 1e3;
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1e3;
 const WARNING_PERCENT = 80;
+const COMMAND_RESERVE_PERCENT = 10;
 class QuotaCounter {
   /**
    * @param now clock (injectable for tests)
@@ -77,6 +79,16 @@ class QuotaCounter {
   allows(count, reserve = 0) {
     return this.summary().remaining - reserve >= count;
   }
+  /**
+   * Checks whether a request of the given priority may be sent now.
+   *
+   * @param priority importance of the request
+   * @returns true if the request fits into the limit (background requests keep the reserve free)
+   */
+  allowsPriority(priority) {
+    const reserve = priority === "background" ? Math.ceil(this.limit * COMMAND_RESERVE_PERCENT / 100) : 0;
+    return this.allows(1, reserve);
+  }
   /** Current summary */
   summary() {
     this.prune();
@@ -105,6 +117,7 @@ class QuotaCounter {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  COMMAND_RESERVE_PERCENT,
   QuotaCounter,
   WARNING_PERCENT,
   WEEKLY_LIMIT,

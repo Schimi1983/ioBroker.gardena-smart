@@ -13,6 +13,15 @@ export const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 /** Usage in percent from which a warning is shown */
 export const WARNING_PERCENT = 80;
 
+/**
+ * Importance of a cloud request.
+ * - `background`: automatic requests (e.g. reading names) – stop early to keep a reserve
+ * - `command`: requests triggered by the user – may use the reserve
+ */
+export type RequestPriority = 'background' | 'command';
+/** Share of the weekly limit kept free for user commands (percent) */
+export const COMMAND_RESERVE_PERCENT = 10;
+
 /** Summary of the quota, as shown in the states */
 export interface QuotaSummary {
 	/** requests in the last 7 days */
@@ -89,6 +98,17 @@ export class QuotaCounter {
 	 */
 	public allows(count: number, reserve = 0): boolean {
 		return this.summary().remaining - reserve >= count;
+	}
+
+	/**
+	 * Checks whether a request of the given priority may be sent now.
+	 *
+	 * @param priority importance of the request
+	 * @returns true if the request fits into the limit (background requests keep the reserve free)
+	 */
+	public allowsPriority(priority: RequestPriority): boolean {
+		const reserve = priority === 'background' ? Math.ceil((this.limit * COMMAND_RESERVE_PERCENT) / 100) : 0;
+		return this.allows(1, reserve);
 	}
 
 	/** Current summary */

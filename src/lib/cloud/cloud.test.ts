@@ -4,6 +4,16 @@ import { CloudAuthError, CloudClient, CloudQuotaError } from './cloud-client';
 import { QuotaCounter, WEEKLY_LIMIT, WINDOW_MS } from './quota';
 
 describe('QuotaCounter', () => {
+	it('keeps a reserve for user commands', () => {
+		const now = 5_000_000_000;
+		const q = new QuotaCounter(() => now, 1000);
+		q.load(JSON.stringify(Array<number>(899).fill(now - 1000)));
+		expect(q.allowsPriority('background')).to.equal(true);
+		q.add();
+		expect(q.allowsPriority('background')).to.equal(false);
+		expect(q.allowsPriority('command')).to.equal(true);
+	});
+
 	it('counts requests in a rolling 7 day window', () => {
 		let now = 1_000_000;
 		const q = new QuotaCounter(() => now);

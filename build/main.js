@@ -45,6 +45,7 @@ const COMMAND_PATTERNS = [
 ];
 const CLOUD_REFRESH_MS = 24 * 60 * 60 * 1e3;
 const CLOUD_BLOCK_DEFAULT_MS = 60 * 60 * 1e3;
+const CLOUD_BLOCK_MAX_MS = 24 * 60 * 60 * 1e3;
 class GardenaSmart extends utils.Adapter {
   client;
   devices;
@@ -56,6 +57,8 @@ class GardenaSmart extends utils.Adapter {
   cloudTimer;
   quotaTimer;
   cloudBlockedUntil = 0;
+  /** consecutive "too many requests" answers (for the increasing waiting time) */
+  cloudRejections = 0;
   cloudStarted = false;
   constructor(options = {}) {
     super({
@@ -187,7 +190,7 @@ class GardenaSmart extends utils.Adapter {
       return;
     }
     if (id === `${this.namespace}.cloud.refresh`) {
-      await this.refreshCloud();
+      await this.refreshCloud(true);
       return;
     }
     if (id === `${this.namespace}.cloud.quota.reset`) {
@@ -213,6 +216,10 @@ class GardenaSmart extends utils.Adapter {
     this.quota = new import_quota.QuotaCounter(Date.now, limit > 0 ? limit : import_quota.WEEKLY_LIMIT);
     const stored = await this.getStateAsync("cloud.quota.log");
     this.quota.load(stored == null ? void 0 : stored.val);
+    const blocked = await this.getStateAsync("cloud.blockedUntil");
+    if (typeof (blocked == null ? void 0 : blocked.val) === "number" && blocked.val > Date.now()) {
+      this.cloudBlockedUntil = blocked.val;
+    }
     await this.updateQuotaStates();
     this.quotaTimer = this.setInterval(() => void this.updateQuotaStates(), 60 * 60 * 1e3);
     if (!appKey || !appSecret) {
@@ -227,9 +234,12 @@ class GardenaSmart extends utils.Adapter {
     });
     this.cloudTimer = this.setInterval(() => void this.refreshCloud(), CLOUD_REFRESH_MS);
   }
-  /** Reads the device names from the GARDENA app (cloud) and takes them over. */
-  async refreshCloud() {
-    var _a;
+  /**
+   * Reads the device names from the GARDENA app (cloud) and takes them over.
+   *
+   * @param manual triggered by the user (may use the reserve kept for commands)
+   */
+  async refreshCloud(manual = false) {
     if (!this.cloud) {
       this.log.warn("Please enter App Key and App Secret in the settings to use the GARDENA cloud");
       return;
@@ -241,7 +251,8 @@ class GardenaSmart extends utils.Adapter {
       return;
     }
     try {
-      const list = await this.cloud.listDevices();
+      const list = await this.cloud.listDevices(manual ? "command" : "background");
+      this.cloudRejections = 0;
       const names = /* @__PURE__ */ new Map();
       for (const dev of list) {
         if (dev.serial && dev.name) {
@@ -260,7 +271,15 @@ class GardenaSmart extends utils.Adapter {
         this.log.error(`GARDENA cloud: ${err.message}`);
       } else if (err instanceof import_cloud_client.CloudQuotaError) {
         const summary = this.quota.summary();
-        const waitMs = (_a = err.retryAfterMs) != null ? _a : summary.remaining === 0 && summary.nextRelease ? summary.nextRelease - Date.now() : CLOUD_BLOCK_DEFAULT_MS;
+        let waitMs;
+        if (err.retryAfterMs !== null) {
+          waitMs = err.retryAfterMs;
+        } else if (summary.used > 0 && !this.quota.allowsPriority("background") && summary.nextRelease) {
+          waitMs = summary.nextRelease - Date.now();
+        } else {
+          this.cloudRejections++;
+          waitMs = Math.min(CLOUD_BLOCK_DEFAULT_MS * 2 ** (this.cloudRejections - 1), CLOUD_BLOCK_MAX_MS);
+        }
         this.cloudBlockedUntil = Date.now() + Math.max(waitMs, 6e4);
         await this.setState("cloud.blocked", true, true);
         await this.setState("cloud.blockedUntil", this.cloudBlockedUntil, true);
