@@ -50,6 +50,7 @@ const PING_INTERVAL = 3e4;
 const RECONNECT_MIN = 5e3;
 const RECONNECT_MAX = 6e4;
 const RECONNECT_AUTH_FAILED = 6e5;
+const COMMAND_TIMEOUT = 3e4;
 function derToPem(der) {
   const b64 = der.toString("base64").replace(/(.{64})/g, "$1\n");
   return `-----BEGIN CERTIFICATE-----
@@ -170,7 +171,7 @@ class GatewayClient extends import_node_events.EventEmitter {
    * @param payload value field
    */
   async write(service, device, path, payload) {
-    await this.request([{ op: "write", entity: { service, device, path }, payload }]);
+    await this.request([{ op: "write", entity: { service, device, path }, payload }], COMMAND_TIMEOUT);
   }
   /**
    * Executes a resource (Gen2 commands like `actuator/0/start`).
@@ -181,7 +182,10 @@ class GatewayClient extends import_node_events.EventEmitter {
    * @param payload optional arguments
    */
   async execute(service, device, path, payload) {
-    await this.request([{ op: "execute", entity: { service, device, path }, ...payload ? { payload } : {} }]);
+    await this.request(
+      [{ op: "execute", entity: { service, device, path }, ...payload ? { payload } : {} }],
+      COMMAND_TIMEOUT
+    );
   }
   /**
    * Reads all devices of both services (Gen1 and Gen2).

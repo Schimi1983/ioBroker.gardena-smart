@@ -75,6 +75,11 @@ const RECONNECT_MIN = 5_000;
 const RECONNECT_MAX = 60_000;
 /** After a rejected password: retry only every 10 minutes to avoid locking the gateway. */
 const RECONNECT_AUTH_FAILED = 600_000;
+/**
+ * Time to wait for the answer to a device command. The gateway forwards the command by radio and answers
+ * only after the device reacted – or after its own timeout when the device is out of range (~15 s observed).
+ */
+const COMMAND_TIMEOUT = 30_000;
 
 interface PendingRequest {
 	resolve: (reply: GatewayReply) => void;
@@ -239,7 +244,7 @@ export class GatewayClient extends EventEmitter {
 	 * @param payload value field
 	 */
 	public async write(service: GatewayService, device: string, path: string, payload: ValueField): Promise<void> {
-		await this.request([{ op: 'write', entity: { service, device, path }, payload }]);
+		await this.request([{ op: 'write', entity: { service, device, path }, payload }], COMMAND_TIMEOUT);
 	}
 
 	/**
@@ -251,7 +256,10 @@ export class GatewayClient extends EventEmitter {
 	 * @param payload optional arguments
 	 */
 	public async execute(service: GatewayService, device: string, path: string, payload?: ValueField): Promise<void> {
-		await this.request([{ op: 'execute', entity: { service, device, path }, ...(payload ? { payload } : {}) }]);
+		await this.request(
+			[{ op: 'execute', entity: { service, device, path }, ...(payload ? { payload } : {}) }],
+			COMMAND_TIMEOUT,
+		);
 	}
 
 	/**

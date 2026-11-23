@@ -130,6 +130,24 @@ export class DeviceManager {
 		return renamed;
 	}
 
+	/**
+	 * Name of a device for log messages: the name of the ioBroker object (e.g. taken from the GARDENA app).
+	 *
+	 * @param dev device
+	 * @returns display name
+	 */
+	private async label(dev: DeviceSnapshot): Promise<string> {
+		const obj = await this.adapter.getObjectAsync(`${DEVICES_FOLDER}.${dev.id}`);
+		const name = obj?.common?.name;
+		if (typeof name === 'string' && name) {
+			return name;
+		}
+		if (name && typeof name === 'object') {
+			return name.de ?? name.en ?? deviceName(dev);
+		}
+		return deviceName(dev);
+	}
+
 	/** Sets all devices offline (e.g. connection to the gateway lost). */
 	public async setAllOffline(): Promise<void> {
 		for (const id of this.devices.keys()) {
@@ -263,7 +281,7 @@ export class DeviceManager {
 		// @KI_HINWEIS: Commands to offline devices are not sent. The gateway might queue them and execute
 		// them much later (e.g. a valve opening when the device is mounted again in spring).
 		if (fieldValue(getField(dev.tree, 'connection_status', '0', 'online')) === false) {
-			this.adapter.log.warn(`${deviceName(dev)} is offline, command ${channel}.${name} was not sent`);
+			this.adapter.log.warn(`${await this.label(dev)} is offline, command ${channel}.${name} was not sent`);
 			await this.restore(dev, id);
 			return;
 		}
@@ -312,7 +330,11 @@ export class DeviceManager {
 			}
 			this.adapter.log.debug(`Command ${rel} sent`);
 		} catch (err) {
-			this.adapter.log.warn(`Command ${rel} failed: ${(err as Error).message}`);
+			this.adapter.log.warn(
+				/did not answer/.test((err as Error).message)
+					? `${await this.label(dev)} did not react to ${channel}.${name}. Is it in radio range and are the batteries OK?`
+					: `Command ${rel} failed: ${(err as Error).message}`,
+			);
 		}
 	}
 
@@ -344,8 +366,8 @@ export class DeviceManager {
 				}
 				this.adapter.log.info(
 					open
-						? `Valve ${valve} of ${deviceName(dev)} opened for ${seconds / 60} min`
-						: `Valve ${valve} of ${deviceName(dev)} closed`,
+						? `Valve ${valve} of ${await this.label(dev)} opened for ${seconds / 60} min`
+						: `Valve ${valve} of ${await this.label(dev)} closed`,
 				);
 				// the gateway confirms the new valve state with an event (ack = true)
 			} else if (name === 'buttonTime') {
@@ -359,7 +381,7 @@ export class DeviceManager {
 				}
 			}
 		} catch (err) {
-			this.adapter.log.warn(`Valve ${valve} of ${deviceName(dev)}: ${(err as Error).message}`);
+			this.adapter.log.warn(`Valve ${valve} of ${await this.label(dev)}: ${(err as Error).message}`);
 			await this.restore(dev, id);
 		}
 	}
@@ -390,10 +412,12 @@ export class DeviceManager {
 			const seconds = on ? await this.durationSeconds(id.replace(/\.on$/, '.duration'), defaultMinutes) : 0;
 			await this.client.write(dev.service, dev.id, `lemonbeat/0/${resource}`, { vi: seconds });
 			this.adapter.log.info(
-				on ? `${deviceName(dev)} switched on for ${seconds / 60} min` : `${deviceName(dev)} switched off`,
+				on
+					? `${await this.label(dev)} switched on for ${seconds / 60} min`
+					: `${await this.label(dev)} switched off`,
 			);
 		} catch (err) {
-			this.adapter.log.warn(`${deviceName(dev)}: ${(err as Error).message}`);
+			this.adapter.log.warn(`${await this.label(dev)}: ${(err as Error).message}`);
 			await this.restore(dev, id);
 		}
 	}
@@ -438,7 +462,7 @@ export class DeviceManager {
 		} else {
 			return;
 		}
-		this.adapter.log.info(`${deviceName(dev)}: ${name}${name === 'start' ? ` for ${seconds / 60} min` : ''}`);
+		this.adapter.log.info(`${await this.label(dev)}: ${name}${name === 'start' ? ` for ${seconds / 60} min` : ''}`);
 	}
 
 	private async durationSeconds(durationId: string, defaultMinutes: number): Promise<number> {

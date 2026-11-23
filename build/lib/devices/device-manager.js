@@ -128,6 +128,24 @@ class DeviceManager {
     }
     return renamed;
   }
+  /**
+   * Name of a device for log messages: the name of the ioBroker object (e.g. taken from the GARDENA app).
+   *
+   * @param dev device
+   * @returns display name
+   */
+  async label(dev) {
+    var _a, _b, _c;
+    const obj = await this.adapter.getObjectAsync(`${DEVICES_FOLDER}.${dev.id}`);
+    const name = (_a = obj == null ? void 0 : obj.common) == null ? void 0 : _a.name;
+    if (typeof name === "string" && name) {
+      return name;
+    }
+    if (name && typeof name === "object") {
+      return (_c = (_b = name.de) != null ? _b : name.en) != null ? _c : (0, import_states.deviceName)(dev);
+    }
+    return (0, import_states.deviceName)(dev);
+  }
   /** Sets all devices offline (e.g. connection to the gateway lost). */
   async setAllOffline() {
     for (const id of this.devices.keys()) {
@@ -252,7 +270,7 @@ class DeviceManager {
       return;
     }
     if ((0, import_protocol2.fieldValue)((0, import_protocol2.getField)(dev.tree, "connection_status", "0", "online")) === false) {
-      this.adapter.log.warn(`${(0, import_states.deviceName)(dev)} is offline, command ${channel}.${name} was not sent`);
+      this.adapter.log.warn(`${await this.label(dev)} is offline, command ${channel}.${name} was not sent`);
       await this.restore(dev, id);
       return;
     }
@@ -300,7 +318,9 @@ class DeviceManager {
       }
       this.adapter.log.debug(`Command ${rel} sent`);
     } catch (err) {
-      this.adapter.log.warn(`Command ${rel} failed: ${err.message}`);
+      this.adapter.log.warn(
+        /did not answer/.test(err.message) ? `${await this.label(dev)} did not react to ${channel}.${name}. Is it in radio range and are the batteries OK?` : `Command ${rel} failed: ${err.message}`
+      );
     }
   }
   async valveCommand(dev, valve, name, state, id) {
@@ -324,7 +344,7 @@ class DeviceManager {
           });
         }
         this.adapter.log.info(
-          open ? `Valve ${valve} of ${(0, import_states.deviceName)(dev)} opened for ${seconds / 60} min` : `Valve ${valve} of ${(0, import_states.deviceName)(dev)} closed`
+          open ? `Valve ${valve} of ${await this.label(dev)} opened for ${seconds / 60} min` : `Valve ${valve} of ${await this.label(dev)} closed`
         );
       } else if (name === "buttonTime") {
         const seconds = Math.min(MAX_SECONDS, Math.max(0, Math.round(Number(state.val) * 60)));
@@ -337,7 +357,7 @@ class DeviceManager {
         }
       }
     } catch (err) {
-      this.adapter.log.warn(`Valve ${valve} of ${(0, import_states.deviceName)(dev)}: ${err.message}`);
+      this.adapter.log.warn(`Valve ${valve} of ${await this.label(dev)}: ${err.message}`);
       await this.restore(dev, id);
     }
   }
@@ -360,10 +380,10 @@ class DeviceManager {
       const seconds = on ? await this.durationSeconds(id.replace(/\.on$/, ".duration"), defaultMinutes) : 0;
       await this.client.write(dev.service, dev.id, `lemonbeat/0/${resource}`, { vi: seconds });
       this.adapter.log.info(
-        on ? `${(0, import_states.deviceName)(dev)} switched on for ${seconds / 60} min` : `${(0, import_states.deviceName)(dev)} switched off`
+        on ? `${await this.label(dev)} switched on for ${seconds / 60} min` : `${await this.label(dev)} switched off`
       );
     } catch (err) {
-      this.adapter.log.warn(`${(0, import_states.deviceName)(dev)}: ${err.message}`);
+      this.adapter.log.warn(`${await this.label(dev)}: ${err.message}`);
       await this.restore(dev, id);
     }
   }
@@ -405,7 +425,7 @@ class DeviceManager {
     } else {
       return;
     }
-    this.adapter.log.info(`${(0, import_states.deviceName)(dev)}: ${name}${name === "start" ? ` for ${seconds / 60} min` : ""}`);
+    this.adapter.log.info(`${await this.label(dev)}: ${name}${name === "start" ? ` for ${seconds / 60} min` : ""}`);
   }
   async durationSeconds(durationId, defaultMinutes) {
     const st = await this.adapter.getStateAsync(durationId);
