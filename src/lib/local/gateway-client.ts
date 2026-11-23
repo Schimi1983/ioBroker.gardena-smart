@@ -342,6 +342,8 @@ export class GatewayClient extends EventEmitter {
 				);
 				this.emit('authFailed');
 				this.reconnectDelay = RECONNECT_AUTH_FAILED;
+				// the error above is enough, no second "connection failed" warning
+				this.outageLogged = true;
 			} else {
 				log.warn(
 					`Gateway answered with HTTP ${res.statusCode}. Is the "local API" enabled in the gateway settings?`,

@@ -260,6 +260,7 @@ class GatewayClient extends import_node_events.EventEmitter {
         );
         this.emit("authFailed");
         this.reconnectDelay = RECONNECT_AUTH_FAILED;
+        this.outageLogged = true;
       } else {
         log.warn(
           `Gateway answered with HTTP ${res.statusCode}. Is the "local API" enabled in the gateway settings?`
