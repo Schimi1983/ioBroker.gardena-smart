@@ -110,6 +110,8 @@ class GatewayClient extends import_node_events.EventEmitter {
   pingTimer;
   reconnectDelay = RECONNECT_MIN;
   alive = false;
+  /** WebSocket handshake completed and not closed yet */
+  isOpen = false;
   stopped = true;
   outageLogged = false;
   /** True while the WebSocket is open. */
@@ -237,6 +239,7 @@ class GatewayClient extends import_node_events.EventEmitter {
     ws.on("open", () => {
       this.reconnectDelay = RECONNECT_MIN;
       this.alive = true;
+      this.isOpen = true;
       if (this.outageLogged) {
         log.info(`Reconnected to the GARDENA smart Gateway at ${host}`);
         this.outageLogged = false;
@@ -266,7 +269,8 @@ class GatewayClient extends import_node_events.EventEmitter {
     });
     ws.on("error", (err) => this.handleConnectError(err));
     ws.on("close", () => {
-      const wasOpen = this.alive;
+      const wasOpen = this.isOpen;
+      this.isOpen = false;
       this.stopPing();
       if (this.ws === ws) {
         this.ws = null;
@@ -316,6 +320,7 @@ class GatewayClient extends import_node_events.EventEmitter {
     this.pingTimer = this.options.timers.startInterval(() => {
       if (!this.alive) {
         this.options.log.warn("Gateway does not answer anymore, reconnecting");
+        this.outageLogged = true;
         ws.terminate();
         return;
       }
