@@ -2,7 +2,7 @@
  * Minimal client for the GARDENA smart system cloud API v2 (Husqvarna Developer Portal).
  *
  * @KI_HINWEIS: Only the requests needed for reading device names are implemented. Every request to
- * api.smart.gardena.dev counts against the weekly limit of 700; token requests go to the separate
+ * api.smart.gardena.dev counts against the weekly limit (1000 per App Key, see Developer Portal); token requests go to the separate
  * Authentication API and are not counted. Tokens (client_credentials) are valid for 1 hour and have no
  * refresh token, so a token is reused until shortly before it expires.
  */

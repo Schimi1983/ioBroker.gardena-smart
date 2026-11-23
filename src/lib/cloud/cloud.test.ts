@@ -23,13 +23,13 @@ describe('QuotaCounter', () => {
 		const q = new QuotaCounter(() => now);
 		q.load('not json');
 		expect(q.summary().used).to.equal(0);
-		q.load(JSON.stringify([...Array<number>(560).fill(now - 1000), 'x', now - WINDOW_MS - 1]));
+		q.load(JSON.stringify([...Array<number>(800).fill(now - 1000), 'x', now - WINDOW_MS - 1]));
 		const s = q.summary();
-		expect(s.used).to.equal(560);
+		expect(s.used).to.equal(800);
 		expect(s.percent).to.equal(80);
 		expect(s.warning).to.equal(true);
-		expect(q.allows(140)).to.equal(true);
-		expect(q.allows(141)).to.equal(false);
+		expect(q.allows(200)).to.equal(true);
+		expect(q.allows(201)).to.equal(false);
 		q.reset();
 		expect(q.summary().used).to.equal(0);
 	});

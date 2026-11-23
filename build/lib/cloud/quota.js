@@ -24,15 +24,17 @@ __export(quota_exports, {
   WINDOW_MS: () => WINDOW_MS
 });
 module.exports = __toCommonJS(quota_exports);
-const WEEKLY_LIMIT = 700;
+const WEEKLY_LIMIT = 1e3;
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1e3;
 const WARNING_PERCENT = 80;
 class QuotaCounter {
   /**
    * @param now clock (injectable for tests)
+   * @param limit weekly limit of the App Key
    */
-  constructor(now = Date.now) {
+  constructor(now = Date.now, limit = WEEKLY_LIMIT) {
     this.now = now;
+    this.limit = limit;
   }
   stamps = [];
   /**
@@ -79,11 +81,11 @@ class QuotaCounter {
   summary() {
     this.prune();
     const used = this.stamps.length;
-    const remaining = Math.max(0, WEEKLY_LIMIT - used);
-    const percent = Math.min(100, Math.round(used / WEEKLY_LIMIT * 100));
+    const remaining = Math.max(0, this.limit - used);
+    const percent = Math.min(100, Math.round(used / this.limit * 100));
     return {
       used,
-      limit: WEEKLY_LIMIT,
+      limit: this.limit,
       remaining,
       percent,
       warning: percent >= WARNING_PERCENT,

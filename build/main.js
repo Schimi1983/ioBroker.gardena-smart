@@ -209,6 +209,8 @@ class GardenaSmart extends utils.Adapter {
     const appKey = ((_a = this.config.appKey) != null ? _a : "").trim();
     const appSecret = ((_b = this.config.appSecret) != null ? _b : "").trim();
     await this.setState("cloud.connection", false, true);
+    const limit = Math.round(Number(this.config.cloudLimit));
+    this.quota = new import_quota.QuotaCounter(Date.now, limit > 0 ? limit : import_quota.WEEKLY_LIMIT);
     const stored = await this.getStateAsync("cloud.quota.log");
     this.quota.load(stored == null ? void 0 : stored.val);
     await this.updateQuotaStates();

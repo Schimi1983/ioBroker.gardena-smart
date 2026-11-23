@@ -5,7 +5,7 @@
 
 import * as utils from '@iobroker/adapter-core';
 import { CloudAuthError, CloudClient, CloudQuotaError } from './lib/cloud/cloud-client';
-import { QuotaCounter } from './lib/cloud/quota';
+import { QuotaCounter, WEEKLY_LIMIT } from './lib/cloud/quota';
 import { DeviceManager } from './lib/devices/device-manager';
 import { type GatewayCertificate, GatewayClient, type Timers } from './lib/local/gateway-client';
 import type { GatewayEvent } from './lib/local/protocol';
@@ -40,7 +40,7 @@ class GardenaSmart extends utils.Adapter {
 	private rediscoverTimer: ioBroker.Timeout | undefined;
 	private discovering = false;
 	private cloud: CloudClient | undefined;
-	private readonly quota = new QuotaCounter();
+	private quota = new QuotaCounter();
 	private cloudNames: Map<string, string> | undefined;
 	private cloudTimer: ioBroker.Interval | undefined;
 	private quotaTimer: ioBroker.Interval | undefined;
@@ -209,6 +209,8 @@ class GardenaSmart extends utils.Adapter {
 		const appKey = (this.config.appKey ?? '').trim();
 		const appSecret = (this.config.appSecret ?? '').trim();
 		await this.setState('cloud.connection', false, true);
+		const limit = Math.round(Number(this.config.cloudLimit));
+		this.quota = new QuotaCounter(Date.now, limit > 0 ? limit : WEEKLY_LIMIT);
 		const stored = await this.getStateAsync('cloud.quota.log');
 		this.quota.load(stored?.val);
 		await this.updateQuotaStates();

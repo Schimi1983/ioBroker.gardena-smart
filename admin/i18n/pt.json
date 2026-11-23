@@ -15,11 +15,13 @@
 	"link_sponsor": "GitHub Sponsors",
 	"link_paypal": "Doar via PayPal",
 	"cloud_header": "Nuvem GARDENA (opcional)",
-	"cloud_text": "Opcional: com a sua própria App Key, o adaptador assume os nomes dos dispositivos da app GARDENA. A nuvem só é usada para isso, cerca de 2 pedidos por dia (limite: 700 por semana). A rega e a comutação funcionam sempre localmente.",
+	"cloud_text": "Opcional: com a sua própria App Key, o adaptador assume os nomes dos dispositivos da app GARDENA. A nuvem só é usada para isso, cerca de 2 pedidos por dia (limite: 1000 por semana). A rega e a comutação funcionam sempre localmente.",
 	"cloud_howto": "Como obter a chave: inicie sessão no Husqvarna Developer Portal com a sua conta GARDENA, crie uma nova aplicação, ligue \"Authentication API\" e \"GARDENA smart system API\" e copie Application Key e Application Secret para os campos abaixo.",
 	"cloud_link": "Abrir Developer Portal",
 	"appkey_help": "\"Application Key\" da sua aplicação no Developer Portal",
 	"appsecret_help": "\"Application Secret\" da sua aplicação no Developer Portal",
 	"App Key": "App Key",
-	"App Secret": "App Secret"
+	"App Secret": "App Secret",
+	"Cloud requests per week": "Pedidos à nuvem por semana",
+	"cloudlimit_help": "Limite semanal da sua aplicação, visível no Developer Portal em \"Usage quota\" (GARDENA smart system API)."
 }

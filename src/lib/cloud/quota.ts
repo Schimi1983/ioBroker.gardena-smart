@@ -6,8 +6,8 @@
  * ioBroker instance or Home Assistant) are not included.
  */
 
-/** Weekly limit of the GARDENA smart system API (requests per App Key) */
-export const WEEKLY_LIMIT = 700;
+/** Default weekly limit of the GARDENA smart system API per App Key (shown in the Developer Portal) */
+export const WEEKLY_LIMIT = 1000;
 /** Length of the rolling window */
 export const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 /** Usage in percent from which a warning is shown */
@@ -37,8 +37,12 @@ export class QuotaCounter {
 
 	/**
 	 * @param now clock (injectable for tests)
+	 * @param limit weekly limit of the App Key
 	 */
-	public constructor(private readonly now: () => number = Date.now) {}
+	public constructor(
+		private readonly now: () => number = Date.now,
+		private readonly limit: number = WEEKLY_LIMIT,
+	) {}
 
 	/**
 	 * Restores the counter from a stored list of time stamps (invalid entries are ignored).
@@ -91,11 +95,11 @@ export class QuotaCounter {
 	public summary(): QuotaSummary {
 		this.prune();
 		const used = this.stamps.length;
-		const remaining = Math.max(0, WEEKLY_LIMIT - used);
-		const percent = Math.min(100, Math.round((used / WEEKLY_LIMIT) * 100));
+		const remaining = Math.max(0, this.limit - used);
+		const percent = Math.min(100, Math.round((used / this.limit) * 100));
 		return {
 			used,
-			limit: WEEKLY_LIMIT,
+			limit: this.limit,
 			remaining,
 			percent,
 			warning: percent >= WARNING_PERCENT,

@@ -55,7 +55,7 @@ The local connection does not know the names you gave your devices in the GARDEN
 2. Create a new application and connect **Authentication API** and **GARDENA smart system API**.
 3. Copy **Application Key** and **Application Secret** into the adapter settings (section *GARDENA cloud*).
 
-The adapter then reads the names once a day (about 2 requests). GARDENA allows 700 requests per week per key. The usage is shown in `cloud.quota.*`; `cloud.quota.reset` sets the counter to 0, e.g. after you created a new key. Names you changed yourself in ioBroker are kept.
+The adapter then reads the names once a day (about 2 requests). GARDENA currently allows 1000 requests per week per key (shown under "Usage quota" in the Developer Portal). The usage is shown in `cloud.quota.*`; `cloud.quota.reset` sets the counter to 0, e.g. after you created a new key. Names you changed yourself in ioBroker are kept.
 
 ## How to use
 
