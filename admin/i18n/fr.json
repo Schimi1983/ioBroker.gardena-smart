@@ -1,6 +1,13 @@
 {
-	"gardena-smart adapter settings": "Paramètres d'adaptateur pour gardena-smart",
-	"host": "host",
-	"port": "port",
-	"password": "password"
+	"Connection to your GARDENA smart Gateway": "Connexion à votre GARDENA smart Gateway",
+	"howto_text": "Avant le premier démarrage : ouvrez la page web de votre passerelle dans le navigateur (saisir son adresse IP), connectez-vous, ouvrez « Paramètres avancés » et activez « API locale ». Saisissez ensuite ci-dessous l'adresse et le mot de passe de la passerelle. L'application GARDENA continue de fonctionner normalement.",
+	"Address of the gateway": "Adresse de la passerelle",
+	"host_help": "Adresse IP de la passerelle, p. ex. 192.168.1.50 (visible dans votre routeur)",
+	"Password of the gateway": "Mot de passe de la passerelle",
+	"password_help": "Le même mot de passe que pour la page web de la passerelle",
+	"Expert settings": "Paramètres experts",
+	"Port": "Port",
+	"port_help": "Ne modifier qu'en cas de besoin (par défaut 8443)",
+	"Show raw values": "Afficher les valeurs brutes",
+	"raw_help": "Crée en plus toutes les valeurs de la passerelle (dossier « raw »). Uniquement utile pour le dépannage."
 }

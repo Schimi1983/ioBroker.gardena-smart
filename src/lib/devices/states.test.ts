@@ -9,9 +9,9 @@ function waterControl1(timer: number): DeviceSnapshot {
 		kind: 'waterControl1',
 		service: 'lemonbeatd',
 		tree: {
-			connection_status: { '0': { online: f({ vb: true }) } },
+			connection_status: { 0: { online: f({ vb: true }) } },
 			device: {
-				'0': {
+				0: {
 					device_type: f({ vs: 'Water Control' }),
 					serial_number: f({ vs: '00012345' }),
 					model_number: f({ vs: '18869' }),
@@ -19,7 +19,7 @@ function waterControl1(timer: number): DeviceSnapshot {
 				},
 			},
 			lemonbeat: {
-				'0': {
+				0: {
 					battery_level: f({ vi: 86 }),
 					ambient_temperature: f({ vi: 18 }),
 					frost_warning: f({ vi: 0 }),
@@ -67,11 +67,18 @@ describe('device states', () => {
 			kind: 'waterControl2',
 			service: 'lwm2mserver',
 			tree: {
-				sg_common: { '0': { name: f({ vs: 'Hochbeet' }) } },
-				device: { '0': { battery_level: f({ vi: 50 }) } },
-				temperature: { '0': { sensor_value: f({ vf: 3.25 }) } },
-				connectivity_monitoring: { '0': { link_quality: f({ vi: 1 }) } },
-				actuator: { '0': { state: f({ vi: 2 }), available: f({ vb: true }), error: f({ vi: 0 }), default_duration_seconds: f({ vi: 600 }) } },
+				sg_common: { 0: { name: f({ vs: 'Hochbeet' }) } },
+				device: { 0: { battery_level: f({ vi: 50 }) } },
+				temperature: { 0: { sensor_value: f({ vf: 3.25 }) } },
+				connectivity_monitoring: { 0: { link_quality: f({ vi: 1 }) } },
+				actuator: {
+					0: {
+						state: f({ vi: 2 }),
+						available: f({ vb: true }),
+						error: f({ vi: 0 }),
+						default_duration_seconds: f({ vi: 600 }),
+					},
+				},
 			},
 		};
 		expect(deviceName(dev)).to.equal('Hochbeet');
@@ -90,7 +97,14 @@ describe('device states', () => {
 			kind: 'sensor1',
 			service: 'lemonbeatd',
 			tree: {
-				lemonbeat: { '0': { soil_humidity: f({ vi: 42 }), soil_temperature: f({ vi: 12 }), light: f({ vi: 1000 }), ambient_temperature: f({ vi: 9 }) } },
+				lemonbeat: {
+					0: {
+						soil_humidity: f({ vi: 42 }),
+						soil_temperature: f({ vi: 12 }),
+						light: f({ vi: 1000 }),
+						ambient_temperature: f({ vi: 9 }),
+					},
+				},
 			},
 		};
 		const byId = Object.fromEntries(buildDevice(dev).states.map(s => [s.id, s]));

@@ -1,6 +1,13 @@
 {
-	"gardena-smart adapter settings": "Ustawienia adaptera dla gardena-smart",
-	"host": "host",
-	"port": "port",
-	"password": "password"
+	"Connection to your GARDENA smart Gateway": "Połączenie z GARDENA smart Gateway",
+	"howto_text": "Przed pierwszym uruchomieniem: otwórz stronę bramki w przeglądarce (wpisz jej adres IP), zaloguj się, otwórz „Ustawienia zaawansowane” i włącz „Lokalne API”. Następnie wpisz poniżej adres i hasło bramki. Aplikacja GARDENA działa dalej jak dotychczas.",
+	"Address of the gateway": "Adres bramki",
+	"host_help": "Adres IP bramki, np. 192.168.1.50 (znajdziesz go w routerze)",
+	"Password of the gateway": "Hasło bramki",
+	"password_help": "To samo hasło co do strony internetowej bramki",
+	"Expert settings": "Ustawienia eksperckie",
+	"Port": "Port",
+	"port_help": "Zmieniaj tylko w razie potrzeby (domyślnie 8443)",
+	"Show raw values": "Pokaż surowe wartości",
+	"raw_help": "Dodatkowo tworzy wszystkie wartości bramki (folder „raw”). Potrzebne tylko do diagnostyki."
 }

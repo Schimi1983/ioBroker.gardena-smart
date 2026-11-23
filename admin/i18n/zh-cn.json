@@ -1,6 +1,13 @@
 {
-	"gardena-smart adapter settings": "gardena-smart的适配器设置",
-	"host": "host",
-	"port": "port",
-	"password": "password"
+	"Connection to your GARDENA smart Gateway": "连接到您的 GARDENA smart Gateway",
+	"howto_text": "首次启动前：在浏览器中打开网关网页（输入其 IP 地址），登录，打开“高级设置”并开启“本地 API”。然后在下方输入网关的地址和密码。GARDENA 应用照常可用。",
+	"Address of the gateway": "网关地址",
+	"host_help": "网关的 IP 地址，例如 192.168.1.50（可在路由器中找到）",
+	"Password of the gateway": "网关密码",
+	"password_help": "与网关网页相同的密码",
+	"Expert settings": "专家设置",
+	"Port": "端口",
+	"port_help": "仅在必要时更改（默认 8443）",
+	"Show raw values": "显示原始值",
+	"raw_help": "额外创建网关报告的所有值（“raw”文件夹）。仅用于故障排查。"
 }

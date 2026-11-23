@@ -7,8 +7,14 @@ import { WebSocketServer } from 'ws';
 import { type GatewayCertificate, GatewayClient, type Timers } from './gateway-client';
 
 const fixtures = join(__dirname, '..', '..', '..', 'test', 'fixtures');
-const certA = { key: readFileSync(join(fixtures, 'gateway-a.key')), cert: readFileSync(join(fixtures, 'gateway-a.crt')) };
-const certB = { key: readFileSync(join(fixtures, 'gateway-b.key')), cert: readFileSync(join(fixtures, 'gateway-b.crt')) };
+const certA = {
+	key: readFileSync(join(fixtures, 'gateway-a.key')),
+	cert: readFileSync(join(fixtures, 'gateway-a.crt')),
+};
+const certB = {
+	key: readFileSync(join(fixtures, 'gateway-b.key')),
+	cert: readFileSync(join(fixtures, 'gateway-b.crt')),
+};
 const PASSWORD = 'secret';
 
 const silent = { debug: () => undefined, info: () => undefined, warn: () => undefined, error: () => undefined };
@@ -30,6 +36,8 @@ interface MockGateway {
  * Minimal mock of the gateway: answers discovery and writes, pushes an event after a write.
  *
  * @param tlsCert key and certificate
+ * @param tlsCert.key private key of the mock gateway
+ * @param tlsCert.cert certificate of the mock gateway
  */
 function startMock(tlsCert: { key: Buffer; cert: Buffer }): Promise<MockGateway> {
 	return new Promise(resolve => {
@@ -46,8 +54,8 @@ function startMock(tlsCert: { key: Buffer; cert: Buffer }): Promise<MockGateway>
 			},
 		});
 		wss.on('connection', ws => {
-			ws.on('message', raw => {
-				const msgs = JSON.parse(String(raw));
+			ws.on('message', (raw: Buffer) => {
+				const msgs = JSON.parse(raw.toString('utf8'));
 				const replies: any[] = [];
 				for (const m of msgs) {
 					received.push(m);
@@ -58,7 +66,12 @@ function startMock(tlsCert: { key: Buffer; cert: Buffer }): Promise<MockGateway>
 							success: true,
 							payload:
 								m.entity.service === 'lemonbeatd'
-									? { DEV1: { device: { '0': { model_number: { vs: '18869' } } }, lemonbeat: { '0': { watering_timer_1: { vi: 0 } } } } }
+									? {
+											DEV1: {
+												device: { 0: { model_number: { vs: '18869' } } },
+												lemonbeat: { 0: { watering_timer_1: { vi: 0 } } },
+											},
+										}
 									: {},
 						});
 					} else {
@@ -70,7 +83,11 @@ function startMock(tlsCert: { key: Buffer; cert: Buffer }): Promise<MockGateway>
 				if (write) {
 					ws.send(
 						JSON.stringify([
-							{ entity: { device: write.entity.device, path: 'lemonbeat/0' }, op: 'update', payload: { watering_timer_1: write.payload } },
+							{
+								entity: { device: write.entity.device, path: 'lemonbeat/0' },
+								op: 'update',
+								payload: { watering_timer_1: write.payload },
+							},
 						]),
 					);
 				}
@@ -158,7 +175,14 @@ describe('GatewayClient', function () {
 	it('does not send the password to a gateway with another certificate', async () => {
 		mock = await startMock(certB);
 		const pinnedA = certA.cert.toString();
-		client = new GatewayClient({ host: '127.0.0.1', port: mock.port, password: PASSWORD, certificatePem: pinnedA, log: silent, timers });
+		client = new GatewayClient({
+			host: '127.0.0.1',
+			port: mock.port,
+			password: PASSWORD,
+			certificatePem: pinnedA,
+			log: silent,
+			timers,
+		});
 		const mismatch = waitFor(client, 'certificateMismatch');
 		client.start();
 		await mismatch;

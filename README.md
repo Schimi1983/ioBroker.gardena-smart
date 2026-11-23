@@ -1,4 +1,5 @@
 ![Logo](admin/gardena-smart.png)
+
 # ioBroker.gardena-smart
 
 [![NPM version](https://img.shields.io/npm/v/iobroker.gardena-smart.svg)](https://www.npmjs.com/package/iobroker.gardena-smart)
@@ -10,132 +11,92 @@
 
 **Tests:** ![Test and Release](https://github.com/Schimi1983/ioBroker.gardena-smart/workflows/Test%20and%20Release/badge.svg)
 
-## gardena-smart adapter for ioBroker
+🇩🇪 [Deutsche Anleitung](docs/de/README.md)
 
-Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)
+## GARDENA smart system adapter for ioBroker
 
-## Developer manual
-This section is intended for the developer. It can be deleted later.
+Control and monitor your GARDENA smart system devices – **directly in your home network**, without the GARDENA cloud.
+The adapter talks to your GARDENA smart Gateway. Changes (e.g. a valve opens) arrive immediately, there is no polling and no request limit.
 
-### DISCLAIMER
+The GARDENA app keeps working as before.
 
-Please make sure that you consider copyrights and trademarks when you use names or logos of a company and add a disclaimer to your README.
-You can check other adapters for examples or ask in the developer community. Using a name or logo of a company without permission may cause legal problems for you.
+> ⚠️ **Early version.** Water Control and smart Sensor are the main focus. Other devices are prepared but not yet tested – feedback is welcome!
 
-### Getting started
+## Setup in 3 steps
 
-You are almost done, only a few steps left:
-1. Create a new repository on GitHub with the name `ioBroker.gardena-smart`
-1. Initialize the current folder as a new git repository:  
-	```bash
-	git init -b main
-	git add .
-	git commit -m "Initial commit"
-	```
-1. Link your local repository with the one on GitHub:  
-	```bash
-	git remote add origin https://github.com/Schimi1983/ioBroker.gardena-smart
-	```
+1. **Switch on the local API of the gateway**
+   Open the web page of your gateway in the browser (type its IP address, you find it in your router), log in with the gateway password,
+   open **"Advanced settings"** and switch on **"Local API"**.
+2. **Install the adapter** and open the settings of the instance.
+3. **Enter the address and the password** of the gateway and save. That's it – your devices appear under `gardena-smart.0.devices`.
 
-1. Push all files to the GitHub repo:  
-	```bash
-	git push origin main
-	```
-1. Add a new secret under https://github.com/Schimi1983/ioBroker.gardena-smart/settings/secrets. It must be named `AUTO_MERGE_TOKEN` and contain a personal access token with push access to the repository, e.g. yours. You can create a new token under https://github.com/settings/tokens.
+On the first connection the adapter remembers the security certificate of your gateway. It will only talk to exactly this gateway afterwards,
+so your password can't end up somewhere else. If you reset or replace your gateway, press the button `info.trustNewCertificate` once.
 
-1. Head over to [src/main.ts](src/main.ts) and start programming!
+## Supported devices
 
-### Best Practices
-We've collected some [best practices](https://github.com/ioBroker/ioBroker.repositories#development-and-coding-best-practices) regarding ioBroker development and coding in general. If you're new to ioBroker or Node.js, you should
-check them out. If you're already experienced, you should also take a look at them - you might learn something new :)
+| Device | What you can do | Status |
+| --- | --- | --- |
+| smart Water Control (1st and 2nd generation) | open/close valve, watering time, button time, battery, temperature | 1st gen: in test |
+| smart Irrigation Control (1st and 2nd generation) | open/close each valve, close all valves | untested |
+| smart Sensor / Sensor II | soil moisture, soil temperature, light, air temperature, measure now | in test |
+| smart Power Adapter | switch on (for a time) / off | untested |
+| smart SILENO mowers | status / activity (control follows) | untested |
+| smart Pump | general information (more follows) | untested |
 
-### State Roles
-When creating state objects, it is important to use the correct role for the state. The role defines how the state should be interpreted by visualizations and other adapters. For a list of available roles and their meanings, please refer to the [state roles documentation](https://www.iobroker.net/#en/documentation/dev/stateroles.md).
+Devices the adapter does not know yet are shown with their general information. With the expert option **"Show raw values"** you see
+everything the gateway reports – please attach these values when you open an issue for a new device.
 
-**Important:** Do not invent your own custom role names. If you need a role that is not part of the official list, please contact the ioBroker developer community for guidance and discussion about adding new roles.
+## How to use
 
-### Scripts in `package.json`
-Several npm scripts are predefined for your convenience. You can run them using `npm run <scriptname>`
-| Script name | Description |
-|-------------|-------------|
-| `build` | Compile the TypeScript sources. |
-| `watch` | Compile the TypeScript sources and watch for changes. |
-| `test:ts` | Executes the tests you defined in `*.test.ts` files. |
-| `test:package` | Ensures your `package.json` and `io-package.json` are valid. |
-| `test:integration` | Tests the adapter startup with an actual instance of ioBroker. |
-| `test` | Performs a minimal test run on package files and your tests. |
-| `check` | Performs a type-check on your code (without compiling anything). |
-| `lint` | Runs `ESLint` to check your code for formatting errors and potential bugs. |
-| `translate` | Translates texts in your adapter to all required languages, see [`@iobroker/adapter-dev`](https://github.com/ioBroker/adapter-dev#manage-translations) for more details. |
-| `release` | Creates a new release, see [`@alcalzone/release-script`](https://github.com/AlCalzone/release-script#usage) for more details. |
+Each device appears as `gardena-smart.0.devices.<device id>` with its name from the gateway (you can rename it in ioBroker).
 
-### Configuring the compilation
-The adapter template uses [esbuild](https://esbuild.github.io/) to compile TypeScript and/or React code. You can configure many compilation settings 
-either in `tsconfig.json` or by changing options for the build tasks. These options are described in detail in the
-[`@iobroker/adapter-dev` documentation](https://github.com/ioBroker/adapter-dev#compile-adapter-files).
+| Data point | Meaning |
+| --- | --- |
+| `info.online` | Device is reachable |
+| `info.battery` | Battery level in % |
+| `info.signal` | Radio signal in % |
+| `info.frostWarning` | `true` if it is close to freezing – better don't water |
+| `info.identify` | Press to let the LED of the device flash |
+| `valve1.open` | `true` = open valve, `false` = close valve. Shows the current state |
+| `valve1.duration` | How long the valve stays open when you set `open` to `true` (minutes) |
+| `valve1.active` | Watering is running (also when started by a schedule or the button on the device) |
+| `valve1.source` | Who started the watering: `manual`, `schedule` or `off` |
+| `valve1.buttonTime` | Watering time when someone presses the button on the device (minutes) |
+| `sensor.soilMoisture` | Soil moisture in % |
+| `sensor.measure` | Press to measure now |
 
-### Writing tests
-When done right, testing code is invaluable, because it gives you the 
-confidence to change your code while knowing exactly if and when 
-something breaks. A good read on the topic of test-driven development 
-is https://hackernoon.com/introduction-to-test-driven-development-tdd-61a13bc92d92. 
-Although writing tests before the code might seem strange at first, but it has very 
-clear upsides.
+### Example: water the lawn for 10 minutes (JavaScript adapter)
 
-The template provides you with basic tests for the adapter startup and package files.
-It is recommended that you add your own tests into the mix.
-
-### Publishing the adapter
-Using GitHub Actions, you can enable automatic releases on npm whenever you push a new git tag that matches the form 
-`v<major>.<minor>.<patch>`. We **strongly recommend** that you do. The necessary steps are described in `.github/workflows/test-and-release.yml`.
-
-Since you installed the release script, you can create a new
-release simply by calling:
-```bash
-npm run release
+```javascript
+const valve = 'gardena-smart.0.devices.<device id>.valve1';
+setState(`${valve}.duration`, 10);
+setState(`${valve}.open`, true); // closes automatically after 10 minutes
 ```
-Additional command line options for the release script are explained in the
-[release-script documentation](https://github.com/AlCalzone/release-script#command-line).
 
-To get your adapter released in ioBroker, please refer to the documentation 
-of [ioBroker.repositories](https://github.com/ioBroker/ioBroker.repositories#requirements-for-adapter-to-get-added-to-the-latest-repository).
+## Questions and problems
 
-### Test the adapter manually on a local ioBroker installation
-In order to install the adapter locally without publishing, the following steps are recommended:
-1. Create a GitHub repository for your adapter if you haven't already
-1. Push your code to the GitHub repository
-1. Use the ioBroker Admin interface or command line to install the adapter from GitHub:
-	* **Via Admin UI**: Go to the "Adapters" tab, click on "Custom Install" (GitHub icon), and enter your repository URL:
-		```
-		https://github.com/Schimi1983/ioBroker.gardena-smart
-		```
-		You can also install from a specific branch by adding `#branchname` at the end:
-		```
-		https://github.com/Schimi1983/ioBroker.gardena-smart#dev
-		```
-	* **Via Command Line**: Install using the `iob` command:
-		```bash
-		iob url https://github.com/Schimi1983/ioBroker.gardena-smart
-		```
-		Or from a specific branch:
-		```bash
-		iob url https://github.com/Schimi1983/ioBroker.gardena-smart#dev
-		```
+Please open an issue on [GitHub](https://github.com/Schimi1983/ioBroker.gardena-smart/issues). Set the log level of the instance to `debug` and add the log.
 
-For later updates:
-1. Push your changes to GitHub
-1. Repeat the installation steps above (via Admin UI or `iob url` command) to update the adapter
+## Technical background
+
+- Connection: secure WebSocket to the gateway on port 8443 (local API, provided by GARDENA)
+- The protocol was implemented based on the official documentation and library of GARDENA:
+  [gardena-smart-local-api](https://github.com/cloudless-garden/gardena-smart-local-api) (no code taken over)
 
 ## Changelog
+
 <!--
 	Placeholder for the next version (at the beginning of the line):
 	### **WORK IN PROGRESS**
 -->
 
 ### **WORK IN PROGRESS**
-* (Schimi) initial release
+
+- (Schimi1983) Initial release: local connection to the GARDENA smart Gateway
 
 ## License
+
 MIT License
 
 Copyright (c) 2026 Schimi <github@world-mg.de>
@@ -157,3 +118,5 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+GARDENA is a registered trademark of GARDENA GmbH. This project is not affiliated with GARDENA or Husqvarna Group.

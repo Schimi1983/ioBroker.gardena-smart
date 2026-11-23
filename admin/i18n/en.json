@@ -1,6 +1,13 @@
 {
-	"gardena-smart adapter settings": "Adapter settings for gardena-smart",
-	"host": "host",
-	"port": "port",
-	"password": "password"
+	"Connection to your GARDENA smart Gateway": "Connection to your GARDENA smart Gateway",
+	"howto_text": "Before the first start: open the web page of your gateway in the browser (enter its IP address), log in, open \"Advanced settings\" and switch on \"Local API\". Then enter the address and the password of the gateway below. The GARDENA app keeps working as before.",
+	"Address of the gateway": "Address of the gateway",
+	"host_help": "IP address of the gateway, e.g. 192.168.1.50 (you find it in your router)",
+	"Password of the gateway": "Password of the gateway",
+	"password_help": "Same password as for the web page of the gateway",
+	"Expert settings": "Expert settings",
+	"Port": "Port",
+	"port_help": "Only change if necessary (default 8443)",
+	"Show raw values": "Show raw values",
+	"raw_help": "Additionally creates all values the gateway reports (folder \"raw\"). Only needed for troubleshooting."
 }

@@ -42,7 +42,9 @@ describe('protocol', () => {
 	});
 
 	it('merges partial updates and deletes', () => {
-		const tree: Record<string, any> = { lemonbeat: { '0': { battery_level: { vi: 80, ts: 1 }, error: { vi: 0 } } } };
+		const tree: Record<string, any> = {
+			lemonbeat: { 0: { battery_level: { vi: 80, ts: 1 }, error: { vi: 0 } } },
+		};
 		mergeAtPath(tree, 'lemonbeat/0', { battery_level: { vi: 65, ts: 2 }, _urn: 'x' });
 		expect(tree.lemonbeat['0'].battery_level).to.deep.equal({ vi: 65, ts: 2 });
 		expect(tree.lemonbeat['0'].error).to.deep.equal({ vi: 0 });
