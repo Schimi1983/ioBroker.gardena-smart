@@ -13,5 +13,13 @@
 	"header_support": "Apoyar el desarrollo",
 	"support_text": "El adaptador es gratuito. Si te resulta útil, puedes apoyar su desarrollo de forma voluntaria.",
 	"link_sponsor": "GitHub Sponsors",
-	"link_paypal": "Donar con PayPal"
+	"link_paypal": "Donar con PayPal",
+	"cloud_header": "Nube GARDENA (opcional)",
+	"cloud_text": "Opcional: con tu propia App Key el adaptador adopta los nombres de los dispositivos de la app GARDENA. La nube solo se usa para esto, unas 2 consultas al día (límite: 700 por semana). El riego y la conmutación siempre funcionan en local.",
+	"cloud_howto": "Cómo obtener la clave: inicia sesión en el Husqvarna Developer Portal con tu cuenta GARDENA, crea una nueva aplicación, conecta \"Authentication API\" y \"GARDENA smart system API\" y copia Application Key y Application Secret en los campos de abajo.",
+	"cloud_link": "Abrir Developer Portal",
+	"appkey_help": "\"Application Key\" de tu aplicación en el Developer Portal",
+	"appsecret_help": "\"Application Secret\" de tu aplicación en el Developer Portal",
+	"App Key": "App Key",
+	"App Secret": "App Secret"
 }

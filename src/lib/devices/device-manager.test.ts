@@ -13,6 +13,7 @@ interface Call {
 /** Minimal in-memory adapter for the DeviceManager */
 function fakeAdapter(): { adapter: ioBroker.Adapter; states: Map<string, ioBroker.State>; logs: string[] } {
 	const states = new Map<string, ioBroker.State>();
+	const objects = new Map<string, any>();
 	const logs: string[] = [];
 	const ns = 'gardena-smart.0';
 	const full = (id: string): string => (id.startsWith(ns) ? id : `${ns}.${id}`);
@@ -24,7 +25,14 @@ function fakeAdapter(): { adapter: ioBroker.Adapter; states: Map<string, ioBroke
 			warn: (m: string) => logs.push(m),
 			error: (m: string) => logs.push(m),
 		},
-		extendObject: async () => undefined,
+		extendObject: async (id: string, obj: any) => {
+			objects.set(full(id), {
+				...(objects.get(full(id)) ?? {}),
+				...obj,
+				common: { ...(objects.get(full(id))?.common ?? {}), ...obj.common },
+			});
+		},
+		getObjectAsync: async (id: string) => objects.get(full(id)) ?? null,
 		setObjectNotExistsAsync: async () => undefined,
 		getStateAsync: async (id: string) => states.get(full(id)) ?? null,
 		setState: async (id: string, val: any, ack?: boolean) => {
@@ -143,5 +151,37 @@ describe('DeviceManager commands', () => {
 		expect(Buffer.from((calls[1].payload as any).vo, 'base64')).to.deep.equal(
 			Buffer.from([0xfa, 0x07, 12, 31, 22, 0]),
 		);
+	});
+});
+
+describe('DeviceManager names from the cloud', () => {
+	it('takes over the app name only while the automatic name is unchanged', async () => {
+		const { adapter } = fakeAdapter();
+		const dm = new DeviceManager(adapter, fakeClient([]), false);
+		const tree = (serial: string): Record<string, unknown> => ({
+			device: {
+				0: {
+					device_type: { vs: 'Water Control' },
+					serial_number: { vs: serial },
+					model_number: { vs: '18869' },
+				},
+			},
+		});
+		await dm.sync(
+			new Map([
+				['A', { service: 'lemonbeatd' as const, tree: tree('111') }],
+				['B', { service: 'lemonbeatd' as const, tree: tree('222') }],
+			]),
+		);
+		await adapter.extendObject('devices.A', { common: { name: 'Water Control 111' } });
+		await adapter.extendObject('devices.B', { common: { name: 'Mein Name' } });
+		const names = new Map([
+			['111', 'Vorgarten'],
+			['222', 'Terrasse'],
+		]);
+		expect(await dm.applyNames(names)).to.equal(1);
+		expect((await adapter.getObjectAsync('devices.A'))?.common.name).to.equal('Vorgarten');
+		expect((await adapter.getObjectAsync('devices.B'))?.common.name).to.equal('Mein Name');
+		expect(await dm.applyNames(names)).to.equal(0);
 	});
 });

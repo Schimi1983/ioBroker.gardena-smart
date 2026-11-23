@@ -44,6 +44,73 @@
 			"lg": 4,
 			"xl": 4
 		},
+		"_cloudHeader": {
+			"type": "header",
+			"text": "cloud_header",
+			"size": 4,
+			"newLine": true,
+			"xs": 12,
+			"sm": 12,
+			"md": 12,
+			"lg": 12,
+			"xl": 12
+		},
+		"_cloudText": {
+			"type": "staticText",
+			"text": "cloud_text",
+			"newLine": true,
+			"xs": 12,
+			"sm": 12,
+			"md": 12,
+			"lg": 12,
+			"xl": 12
+		},
+		"_cloudHowto": {
+			"type": "staticText",
+			"text": "cloud_howto",
+			"newLine": true,
+			"xs": 12,
+			"sm": 12,
+			"md": 12,
+			"lg": 12,
+			"xl": 12
+		},
+		"_cloudLink": {
+			"type": "staticLink",
+			"text": "cloud_link",
+			"href": "https://developer.husqvarnagroup.cloud/",
+			"button": true,
+			"variant": "outlined",
+			"newLine": true,
+			"xs": 12,
+			"sm": 6,
+			"md": 4,
+			"lg": 3,
+			"xl": 3
+		},
+		"appKey": {
+			"type": "text",
+			"label": "App Key",
+			"help": "appkey_help",
+			"newLine": true,
+			"xs": 12,
+			"sm": 12,
+			"md": 6,
+			"lg": 4,
+			"xl": 4
+		},
+		"appSecret": {
+			"type": "password",
+			"label": "App Secret",
+			"help": "appsecret_help",
+			"repeat": false,
+			"visible": true,
+			"xs": 12,
+			"sm": 12,
+			"md": 6,
+			"lg": 4,
+			"xl": 4
+		},
 		"_expertHeader": {
 			"type": "header",
 			"text": "Expert settings",

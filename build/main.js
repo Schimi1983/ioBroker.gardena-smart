@@ -22,6 +22,8 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 var utils = __toESM(require("@iobroker/adapter-core"));
+var import_cloud_client = require("./lib/cloud/cloud-client");
+var import_quota = require("./lib/cloud/quota");
 var import_device_manager = require("./lib/devices/device-manager");
 var import_gateway_client = require("./lib/local/gateway-client");
 const COMMAND_PATTERNS = [
@@ -37,13 +39,24 @@ const COMMAND_PATTERNS = [
   "devices.*.parkUntilFurtherNotice",
   "devices.*.pause",
   "devices.*.operatingMode",
-  "info.trustNewCertificate"
+  "info.trustNewCertificate",
+  "cloud.refresh",
+  "cloud.quota.reset"
 ];
+const CLOUD_REFRESH_MS = 24 * 60 * 60 * 1e3;
+const CLOUD_BLOCK_DEFAULT_MS = 60 * 60 * 1e3;
 class GardenaSmart extends utils.Adapter {
   client;
   devices;
   rediscoverTimer;
   discovering = false;
+  cloud;
+  quota = new import_quota.QuotaCounter();
+  cloudNames;
+  cloudTimer;
+  quotaTimer;
+  cloudBlockedUntil = 0;
+  cloudStarted = false;
   constructor(options = {}) {
     super({
       ...options,
@@ -67,6 +80,7 @@ class GardenaSmart extends utils.Adapter {
     for (const pattern of COMMAND_PATTERNS) {
       this.subscribeStates(pattern);
     }
+    await this.initCloud();
     this.startClient(host, port);
   }
   /**
@@ -131,6 +145,12 @@ class GardenaSmart extends utils.Adapter {
       await this.devices.sync(found);
       await this.setState("info.devices", this.devices.count, true);
       this.log.info(`${found.size} GARDENA device(s) found`);
+      if (this.cloudNames) {
+        await this.devices.applyNames(this.cloudNames);
+      } else if (this.cloud && !this.cloudStarted) {
+        this.cloudStarted = true;
+        void this.refreshCloud();
+      }
     } catch (err) {
       this.log.warn(`Reading the devices failed: ${err.message}`);
     } finally {
@@ -166,16 +186,116 @@ class GardenaSmart extends utils.Adapter {
       this.startClient(((_b = this.config.host) != null ? _b : "").trim(), Number(this.config.port) || 8443);
       return;
     }
+    if (id === `${this.namespace}.cloud.refresh`) {
+      await this.refreshCloud();
+      return;
+    }
+    if (id === `${this.namespace}.cloud.quota.reset`) {
+      this.log.info("Request counter of the GARDENA cloud reset");
+      this.quota.reset();
+      this.cloudBlockedUntil = 0;
+      await this.saveQuota();
+      return;
+    }
     if (!((_c = this.client) == null ? void 0 : _c.connected)) {
       this.log.warn("Command not possible: no connection to the GARDENA smart Gateway");
       return;
     }
     await ((_d = this.devices) == null ? void 0 : _d.handleCommand(id, state));
   }
+  /** Prepares the optional cloud connection (only if App Key and App Secret are entered). */
+  async initCloud() {
+    var _a, _b;
+    const appKey = ((_a = this.config.appKey) != null ? _a : "").trim();
+    const appSecret = ((_b = this.config.appSecret) != null ? _b : "").trim();
+    await this.setState("cloud.connection", false, true);
+    const stored = await this.getStateAsync("cloud.quota.log");
+    this.quota.load(stored == null ? void 0 : stored.val);
+    await this.updateQuotaStates();
+    this.quotaTimer = this.setInterval(() => void this.updateQuotaStates(), 60 * 60 * 1e3);
+    if (!appKey || !appSecret) {
+      this.log.debug("No App Key entered: the GARDENA cloud is not used");
+      return;
+    }
+    this.cloud = new import_cloud_client.CloudClient({
+      appKey,
+      appSecret,
+      quota: this.quota,
+      onRequest: () => void this.saveQuota()
+    });
+    this.cloudTimer = this.setInterval(() => void this.refreshCloud(), CLOUD_REFRESH_MS);
+  }
+  /** Reads the device names from the GARDENA app (cloud) and takes them over. */
+  async refreshCloud() {
+    var _a;
+    if (!this.cloud) {
+      this.log.warn("Please enter App Key and App Secret in the settings to use the GARDENA cloud");
+      return;
+    }
+    if (Date.now() < this.cloudBlockedUntil) {
+      this.log.info(
+        `GARDENA cloud paused until ${new Date(this.cloudBlockedUntil).toLocaleString()} (too many requests)`
+      );
+      return;
+    }
+    try {
+      const list = await this.cloud.listDevices();
+      const names = /* @__PURE__ */ new Map();
+      for (const dev of list) {
+        if (dev.serial && dev.name) {
+          names.set(dev.serial, dev.name);
+        }
+      }
+      this.cloudNames = names;
+      const renamed = this.devices ? await this.devices.applyNames(names) : 0;
+      await this.setState("cloud.connection", true, true);
+      await this.setState("cloud.lastUpdate", Date.now(), true);
+      await this.setState("cloud.blocked", false, true);
+      this.log.info(`GARDENA cloud: ${list.length} device(s) in the app, ${renamed} name(s) taken over`);
+    } catch (err) {
+      await this.setState("cloud.connection", false, true);
+      if (err instanceof import_cloud_client.CloudAuthError) {
+        this.log.error(`GARDENA cloud: ${err.message}`);
+      } else if (err instanceof import_cloud_client.CloudQuotaError) {
+        const summary = this.quota.summary();
+        const wait = (_a = err.retryAfterMs) != null ? _a : summary.remaining === 0 && summary.nextRelease ? summary.nextRelease - Date.now() : CLOUD_BLOCK_DEFAULT_MS;
+        this.cloudBlockedUntil = Date.now() + Math.max(wait, 6e4);
+        await this.setState("cloud.blocked", true, true);
+        await this.setState("cloud.blockedUntil", this.cloudBlockedUntil, true);
+        this.log.warn(
+          `GARDENA cloud: ${err.message}. Next try after ${new Date(this.cloudBlockedUntil).toLocaleString()}`
+        );
+      } else {
+        this.log.warn(`GARDENA cloud: ${err.message}`);
+      }
+    }
+  }
+  async saveQuota() {
+    await this.setState("cloud.quota.log", this.quota.serialize(), true);
+    await this.updateQuotaStates();
+  }
+  async updateQuotaStates() {
+    const q = this.quota.summary();
+    await this.setStateChangedAsync("cloud.quota.used", q.used, true);
+    await this.setStateChangedAsync("cloud.quota.limit", q.limit, true);
+    await this.setStateChangedAsync("cloud.quota.remaining", q.remaining, true);
+    await this.setStateChangedAsync("cloud.quota.percent", q.percent, true);
+    await this.setStateChangedAsync("cloud.quota.warning", q.warning, true);
+    if (this.cloudBlockedUntil && Date.now() >= this.cloudBlockedUntil) {
+      this.cloudBlockedUntil = 0;
+      await this.setStateChangedAsync("cloud.blocked", false, true);
+    }
+  }
   onUnload(callback) {
     var _a;
     try {
       (_a = this.client) == null ? void 0 : _a.stop();
+      if (this.cloudTimer) {
+        this.clearInterval(this.cloudTimer);
+      }
+      if (this.quotaTimer) {
+        this.clearInterval(this.quotaTimer);
+      }
       void this.setState("info.connection", false, true);
       callback();
     } catch {

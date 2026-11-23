@@ -17,6 +17,16 @@ Die GARDENA App funktioniert weiterhin wie gewohnt.
 Bei der ersten Verbindung merkt sich der Adapter das Sicherheitszertifikat deines Gateways. Danach spricht er nur noch mit genau diesem Gateway,
 dein Passwort kann also nirgendwo anders landen. Hast du das Gateway zurückgesetzt oder getauscht, drücke einmal `info.trustNewCertificate`.
 
+## Optional: Gerätenamen aus der GARDENA-App
+
+Die lokale Verbindung kennt die Namen nicht, die du deinen Geräten in der GARDENA-App gegeben hast. Wenn du sie in ioBroker haben möchtest, trage einen eigenen App-Key ein:
+
+1. Im [Husqvarna Developer Portal](https://developer.husqvarnagroup.cloud/) mit deinem GARDENA-Konto anmelden.
+2. Eine neue Anwendung anlegen und **Authentication API** sowie **GARDENA smart system API** verbinden.
+3. **Application Key** und **Application Secret** in die Adapter-Einstellungen kopieren (Abschnitt *GARDENA-Cloud*).
+
+Der Adapter liest die Namen dann einmal am Tag (etwa 2 Abfragen). GARDENA erlaubt 700 Abfragen pro Woche und Key. Den Verbrauch siehst du unter `cloud.quota.*`; `cloud.quota.reset` setzt den Zähler auf 0, z. B. nach einem neuen Key. Namen, die du in ioBroker selbst geändert hast, bleiben erhalten.
+
 ## Wichtige Datenpunkte
 
 | Datenpunkt | Bedeutung |

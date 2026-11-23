@@ -90,6 +90,36 @@ class DeviceManager {
     await this.updateDevice(dev, false);
     return true;
   }
+  /**
+   * Takes over the names from the GARDENA app (matched by serial number). A name the user has changed in
+   * ioBroker is kept: only the automatically created name (type + serial number) is replaced.
+   *
+   * @param namesBySerial device name per serial number
+   * @returns number of devices renamed
+   */
+  async applyNames(namesBySerial) {
+    var _a;
+    let renamed = 0;
+    for (const dev of this.devices.values()) {
+      const serial = (0, import_protocol2.fieldValue)((0, import_protocol2.getField)(dev.tree, "device", "0", "serial_number"));
+      const name = serial !== null ? namesBySerial.get(String(serial)) : void 0;
+      if (!name) {
+        continue;
+      }
+      const id = `${DEVICES_FOLDER}.${dev.id}`;
+      const obj = await this.adapter.getObjectAsync(id);
+      const current = (_a = obj == null ? void 0 : obj.common) == null ? void 0 : _a.name;
+      if (current === name) {
+        continue;
+      }
+      if (obj && typeof current === "string" && current !== (0, import_states.deviceName)(dev)) {
+        continue;
+      }
+      await this.adapter.extendObject(id, { common: { name } });
+      renamed++;
+    }
+    return renamed;
+  }
   /** Sets all devices offline (e.g. connection to the gateway lost). */
   async setAllOffline() {
     for (const id of this.devices.keys()) {

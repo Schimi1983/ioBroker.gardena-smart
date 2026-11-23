@@ -13,5 +13,13 @@
 	"header_support": "Wesprzyj rozwój",
 	"support_text": "Adapter jest darmowy. Jeśli jest dla Ciebie przydatny, możesz dobrowolnie wesprzeć jego rozwój.",
 	"link_sponsor": "GitHub Sponsors",
-	"link_paypal": "Wpłać przez PayPal"
+	"link_paypal": "Wpłać przez PayPal",
+	"cloud_header": "Chmura GARDENA (opcjonalnie)",
+	"cloud_text": "Opcjonalnie: z własnym App Key adapter przejmuje nazwy urządzeń z aplikacji GARDENA. Chmura służy tylko do tego, ok. 2 zapytania dziennie (limit: 700 na tydzień). Podlewanie i przełączanie zawsze działa lokalnie.",
+	"cloud_howto": "Jak uzyskać klucz: zaloguj się kontem GARDENA w Husqvarna Developer Portal, utwórz nową aplikację, połącz \"Authentication API\" i \"GARDENA smart system API\", a następnie skopiuj Application Key i Application Secret do pól poniżej.",
+	"cloud_link": "Otwórz Developer Portal",
+	"appkey_help": "\"Application Key\" Twojej aplikacji w Developer Portal",
+	"appsecret_help": "\"Application Secret\" Twojej aplikacji w Developer Portal",
+	"App Key": "App Key",
+	"App Secret": "App Secret"
 }

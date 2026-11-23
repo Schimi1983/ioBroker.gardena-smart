@@ -13,5 +13,13 @@
 	"header_support": "支持开发",
 	"support_text": "该适配器免费提供。如果它对您有帮助，您可以自愿支持其开发。",
 	"link_sponsor": "GitHub Sponsors",
-	"link_paypal": "通过 PayPal 捐赠"
+	"link_paypal": "通过 PayPal 捐赠",
+	"cloud_header": "GARDENA 云（可选）",
+	"cloud_text": "可选：使用您自己的 App Key，适配器会从 GARDENA 应用中获取设备名称。云仅用于此目的，每天约 2 次请求（限额：每周 700 次）。浇水和开关始终在本地运行。",
+	"cloud_howto": "获取密钥：使用 GARDENA 账户登录 Husqvarna Developer Portal，创建新应用，连接 \"Authentication API\" 和 \"GARDENA smart system API\"，然后将 Application Key 和 Application Secret 复制到下面的字段中。",
+	"cloud_link": "打开 Developer Portal",
+	"appkey_help": "Developer Portal 中您应用的 \"Application Key\"",
+	"appsecret_help": "Developer Portal 中您应用的 \"Application Secret\"",
+	"App Key": "App Key",
+	"App Secret": "App Secret"
 }

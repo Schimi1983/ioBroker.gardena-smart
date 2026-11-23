@@ -88,6 +88,8 @@
     "host": "",
     "port": 8443,
     "password": "",
+    "appKey": "",
+    "appSecret": "",
     "rawStates": false
   },
   "objects": [],
@@ -197,12 +199,227 @@
         "write": true
       },
       "native": {}
+    },
+    {
+      "_id": "cloud",
+      "type": "channel",
+      "common": {
+        "name": {
+          "en": "GARDENA cloud (optional)",
+          "de": "GARDENA-Cloud (optional)"
+        }
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.connection",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Last cloud request successful",
+          "de": "Letzte Cloud-Abfrage erfolgreich"
+        },
+        "read": true,
+        "write": false,
+        "type": "boolean",
+        "role": "indicator.reachable",
+        "def": false
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.lastUpdate",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Last successful cloud request",
+          "de": "Letzte erfolgreiche Cloud-Abfrage"
+        },
+        "read": true,
+        "write": false,
+        "type": "number",
+        "role": "value.time"
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.refresh",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Read names from the cloud now (uses 2 requests)",
+          "de": "Namen jetzt aus der Cloud lesen (verbraucht 2 Abfragen)"
+        },
+        "read": false,
+        "write": true,
+        "type": "boolean",
+        "role": "button"
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.blocked",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Cloud paused (too many requests)",
+          "de": "Cloud pausiert (zu viele Abfragen)"
+        },
+        "read": true,
+        "write": false,
+        "type": "boolean",
+        "role": "indicator.alarm",
+        "def": false
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.blockedUntil",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Cloud paused until",
+          "de": "Cloud pausiert bis"
+        },
+        "read": true,
+        "write": false,
+        "type": "number",
+        "role": "value.time"
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.quota",
+      "type": "channel",
+      "common": {
+        "name": {
+          "en": "Cloud requests (last 7 days)",
+          "de": "Cloud-Abfragen (letzte 7 Tage)"
+        }
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.quota.used",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Requests used in the last 7 days",
+          "de": "Verbrauchte Abfragen (7 Tage)"
+        },
+        "read": true,
+        "write": false,
+        "type": "number",
+        "role": "value",
+        "def": 0
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.quota.limit",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Weekly limit",
+          "de": "Wochenlimit"
+        },
+        "read": true,
+        "write": false,
+        "type": "number",
+        "role": "value",
+        "def": 700
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.quota.remaining",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Requests left",
+          "de": "Verbleibende Abfragen"
+        },
+        "read": true,
+        "write": false,
+        "type": "number",
+        "role": "value",
+        "def": 700
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.quota.percent",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Used share of the weekly limit",
+          "de": "Anteil am Wochenlimit"
+        },
+        "read": true,
+        "write": false,
+        "type": "number",
+        "role": "value",
+        "unit": "%",
+        "min": 0,
+        "max": 100,
+        "def": 0
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.quota.warning",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "80 % of the weekly limit used",
+          "de": "80 % des Wochenlimits verbraucht"
+        },
+        "read": true,
+        "write": false,
+        "type": "boolean",
+        "role": "indicator.warning",
+        "def": false
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.quota.reset",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Reset counter (e.g. after creating a new App Key)",
+          "de": "Zähler zurücksetzen (z. B. nach neuem App-Key)"
+        },
+        "read": false,
+        "write": true,
+        "type": "boolean",
+        "role": "button"
+      },
+      "native": {}
+    },
+    {
+      "_id": "cloud.quota.log",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Times of the counted requests (internal)",
+          "de": "Zeitpunkte der gezählten Abfragen (intern)"
+        },
+        "read": true,
+        "write": false,
+        "type": "string",
+        "role": "json",
+        "def": "[]"
+      },
+      "native": {}
     }
   ],
   "encryptedNative": [
-    "password"
+    "password",
+    "appSecret"
   ],
   "protectedNative": [
-    "password"
+    "password",
+    "appSecret"
   ]
 }

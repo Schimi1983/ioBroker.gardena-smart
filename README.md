@@ -47,6 +47,16 @@ so your password can't end up somewhere else. If you reset or replace your gatew
 Devices the adapter does not know yet are shown with their general information. With the expert option **"Show raw values"** you see
 everything the gateway reports – please attach these values when you open an issue for a new device.
 
+### Optional: device names from the GARDENA app
+
+The local connection does not know the names you gave your devices in the GARDENA app. If you want them in ioBroker, enter your own App Key:
+
+1. Sign in to the [Husqvarna Developer Portal](https://developer.husqvarnagroup.cloud/) with your GARDENA account.
+2. Create a new application and connect **Authentication API** and **GARDENA smart system API**.
+3. Copy **Application Key** and **Application Secret** into the adapter settings (section *GARDENA cloud*).
+
+The adapter then reads the names once a day (about 2 requests). GARDENA allows 700 requests per week per key. The usage is shown in `cloud.quota.*`; `cloud.quota.reset` sets the counter to 0, e.g. after you created a new key. Names you changed yourself in ioBroker are kept.
+
 ## How to use
 
 Each device appears as `gardena-smart.0.devices.<device id>` with its name from the gateway (you can rename it in ioBroker).
@@ -103,6 +113,7 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.gar
 ### **WORK IN PROGRESS**
 
 - (Schimi1983) Initial release: local connection to the GARDENA smart Gateway
+- (Schimi1983) Optional: device names from the GARDENA app via your own App Key, with request counter for the weekly limit
 - (Schimi1983) Support links (GitHub Sponsors, PayPal) in the README, in `package.json` (`npm fund`) and at the bottom of the settings page
 
 ## License
