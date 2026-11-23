@@ -319,7 +319,7 @@ class DeviceManager {
       this.adapter.log.debug(`Command ${rel} sent`);
     } catch (err) {
       this.adapter.log.warn(
-        /did not answer/.test(err.message) ? `${await this.label(dev)} did not react to ${channel}.${name}. Is it in radio range and are the batteries OK?` : `Command ${rel} failed: ${err.message}`
+        /did not answer|unknown reason/.test(err.message) ? `${await this.label(dev)} did not react to ${channel}.${name}. Is it in radio range and are the batteries OK?` : `Command ${rel} failed: ${err.message}`
       );
     }
   }
