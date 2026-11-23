@@ -25,6 +25,7 @@ __export(states_exports, {
   wateringEnd: () => wateringEnd
 });
 module.exports = __toCommonJS(states_exports);
+var import_schedule = require("./schedule");
 var import_protocol = require("../local/protocol");
 var import_models = require("./models");
 const n = (en, de) => ({ en, de });
@@ -240,6 +241,80 @@ function wateringEnd(seconds, ts) {
   }
   return ts === void 0 ? null : ts + Math.abs(seconds) * 1e3;
 }
+function addSchedulePause(t, nr, ch, states) {
+  const raw = v(t, "lemonbeat", "0", `action_paused_until_${nr}`);
+  if (raw.value === null) {
+    return;
+  }
+  const pause = (0, import_schedule.decodePause)(raw.value, (0, import_schedule.parseUtcOffset)(v(t, "device", "0", "utc_offset").value));
+  states.push({
+    id: `${ch}.schedulePaused`,
+    common: {
+      name: n("Schedules paused", "Zeitpl\xE4ne angehalten"),
+      type: "boolean",
+      role: "indicator",
+      read: true,
+      write: false
+    },
+    value: pause ? pause.paused : null,
+    ts: raw.ts
+  });
+  states.push({
+    id: `${ch}.pausedUntil`,
+    common: {
+      name: n("Schedules paused until (0 = not paused)", "Zeitpl\xE4ne angehalten bis (0 = nicht angehalten)"),
+      type: "number",
+      role: "value.time",
+      read: true,
+      write: false
+    },
+    value: pause ? pause.until : null,
+    ts: raw.ts
+  });
+  states.push({
+    id: `${ch}.pauseSchedule`,
+    common: {
+      name: n(
+        "Pause schedules for hours (0 = resume, -1 = permanently)",
+        "Zeitpl\xE4ne f\xFCr Stunden anhalten (0 = fortsetzen, -1 = dauerhaft)"
+      ),
+      type: "number",
+      role: "level",
+      unit: "h",
+      min: -1,
+      max: 8760,
+      read: true,
+      write: true,
+      states: {
+        0: "resume",
+        24: "1 day",
+        48: "2 days",
+        72: "3 days",
+        168: "1 week",
+        "-1": "permanently"
+      }
+    }
+  });
+}
+function addSchedules(t, ch, states) {
+  const raw = v(t, "lemonbeat", "0", "schedule_config");
+  if (raw.value === null) {
+    return;
+  }
+  const list = (0, import_schedule.decodeSchedules)(raw.value).map(({ start, end, minutes, days }) => ({ start, end, minutes, days }));
+  states.push({
+    id: `${ch}.schedules`,
+    common: {
+      name: n("Schedules (from the GARDENA app)", "Zeitpl\xE4ne (aus der GARDENA App)"),
+      type: "string",
+      role: "json",
+      read: true,
+      write: false
+    },
+    value: JSON.stringify(list),
+    ts: raw.ts
+  });
+}
 function valveControls(states, ch, open, ts) {
   states.push({
     id: `${ch}.open`,
@@ -347,7 +422,9 @@ function addGen1Valves(t, count, channels, states, waterControl) {
         value: (connected & 1 << i) !== 0
       });
     }
+    addSchedulePause(t, i, ch, states);
     if (waterControl) {
+      addSchedules(t, ch, states);
       const button2 = v(t, "lemonbeat", "0", "button_config_time");
       if (button2.value !== null) {
         states.push({

@@ -73,6 +73,9 @@ Each device appears as `gardena-smart.0.devices.<device id>` with its name from 
 | `valve1.active` | Watering is running (also when started by a schedule or the button on the device) |
 | `valve1.source` | Who started the watering: `manual`, `schedule` or `off` |
 | `valve1.endTime` | When the watering ends (time stamp, 0 = not watering) – handy for "7 min left" |
+| `valve1.pauseSchedule` | Pause the schedules from the GARDENA app: hours, `0` = resume, `-1` = permanently |
+| `valve1.schedulePaused` / `valve1.pausedUntil` | Schedules are paused / until when |
+| `valve1.schedules` | Schedules from the GARDENA app (start, end, minutes) as JSON |
 | `valve1.buttonTime` | Watering time when someone presses the button on the device (minutes) |
 | `sensor.soilMoisture` | Soil moisture in % |
 | `sensor.measure` | Press to measure now |
@@ -114,6 +117,7 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.gar
 ### **WORK IN PROGRESS**
 
 - (Schimi1983) Initial release: local connection to the GARDENA smart Gateway
+- (Schimi1983) Water Control: end of the current watering, schedules from the GARDENA app, pause/resume the schedules
 - (Schimi1983) Optional: device names from the GARDENA app via your own App Key, with request counter for the weekly limit
 - (Schimi1983) Support links (GitHub Sponsors, PayPal) in the README, in `package.json` (`npm fund`) and at the bottom of the settings page
 

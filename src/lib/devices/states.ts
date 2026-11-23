@@ -1,3 +1,4 @@
+import { decodePause, decodeSchedules, parseUtcOffset } from './schedule';
 import {
 	type ResourceValue,
 	type ValueField,
@@ -302,6 +303,97 @@ export function wateringEnd(seconds: number | null, ts: number | undefined): num
 	return ts === undefined ? null : ts + Math.abs(seconds) * 1000;
 }
 
+/**
+ * Schedule pause of a first generation valve (`action_paused_until_N`).
+ *
+ * @param t device tree
+ * @param nr valve number (1 based)
+ * @param ch channel id
+ * @param states target list
+ */
+function addSchedulePause(t: Record<string, unknown>, nr: number, ch: string, states: StateSpec[]): void {
+	const raw = v(t, 'lemonbeat', '0', `action_paused_until_${nr}`);
+	if (raw.value === null) {
+		return;
+	}
+	const pause = decodePause(raw.value, parseUtcOffset(v(t, 'device', '0', 'utc_offset').value));
+	states.push({
+		id: `${ch}.schedulePaused`,
+		common: {
+			name: n('Schedules paused', 'Zeitpläne angehalten'),
+			type: 'boolean',
+			role: 'indicator',
+			read: true,
+			write: false,
+		},
+		value: pause ? pause.paused : null,
+		ts: raw.ts,
+	});
+	states.push({
+		id: `${ch}.pausedUntil`,
+		common: {
+			name: n('Schedules paused until (0 = not paused)', 'Zeitpläne angehalten bis (0 = nicht angehalten)'),
+			type: 'number',
+			role: 'value.time',
+			read: true,
+			write: false,
+		},
+		value: pause ? pause.until : null,
+		ts: raw.ts,
+	});
+	states.push({
+		id: `${ch}.pauseSchedule`,
+		common: {
+			name: n(
+				'Pause schedules for hours (0 = resume, -1 = permanently)',
+				'Zeitpläne für Stunden anhalten (0 = fortsetzen, -1 = dauerhaft)',
+			),
+			type: 'number',
+			role: 'level',
+			unit: 'h',
+			min: -1,
+			max: 8760,
+			read: true,
+			write: true,
+			states: {
+				0: 'resume',
+				24: '1 day',
+				48: '2 days',
+				72: '3 days',
+				168: '1 week',
+				'-1': 'permanently',
+			},
+		},
+	});
+}
+
+/**
+ * Schedules of a Water Control (`schedule_config`) as JSON.
+ *
+ * @param t device tree
+ * @param ch channel id
+ * @param states target list
+ */
+function addSchedules(t: Record<string, unknown>, ch: string, states: StateSpec[]): void {
+	const raw = v(t, 'lemonbeat', '0', 'schedule_config');
+	if (raw.value === null) {
+		return;
+	}
+	const list = decodeSchedules(raw.value).map(({ start, end, minutes, days }) => ({ start, end, minutes, days }));
+	states.push({
+		id: `${ch}.schedules`,
+		common: {
+			name: n('Schedules (from the GARDENA app)', 'Zeitpläne (aus der GARDENA App)'),
+			type: 'string',
+			role: 'json',
+			read: true,
+			write: false,
+		},
+		value: JSON.stringify(list),
+		ts: raw.ts,
+	});
+}
+
 function valveControls(states: StateSpec[], ch: string, open: boolean | null, ts: number | undefined): void {
 	states.push({
 		id: `${ch}.open`,
@@ -417,7 +509,9 @@ function addGen1Valves(
 				value: (connected & (1 << i)) !== 0,
 			});
 		}
+		addSchedulePause(t, i, ch, states);
 		if (waterControl) {
+			addSchedules(t, ch, states);
 			const button = v(t, 'lemonbeat', '0', 'button_config_time');
 			if (button.value !== null) {
 				states.push({

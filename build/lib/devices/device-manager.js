@@ -23,6 +23,7 @@ __export(device_manager_exports, {
   serialFromDeviceId: () => serialFromDeviceId
 });
 module.exports = __toCommonJS(device_manager_exports);
+var import_schedule = require("./schedule");
 var import_protocol = require("../local/protocol");
 var import_models = require("./models");
 var import_protocol2 = require("../local/protocol");
@@ -295,6 +296,17 @@ class DeviceManager {
         }
         this.adapter.log.info(
           open ? `Valve ${valve} of ${(0, import_states.deviceName)(dev)} opened for ${seconds / 60} min` : `Valve ${valve} of ${(0, import_states.deviceName)(dev)} closed`
+        );
+      } else if (name === "pauseSchedule" && gen1) {
+        const hours = Number(state.val);
+        const offset = (0, import_schedule.parseUtcOffset)((0, import_protocol2.fieldValue)((0, import_protocol2.getField)(dev.tree, "device", "0", "utc_offset")));
+        const until = hours < 0 ? "permanent" : hours > 0 ? Date.now() + Math.min(hours, 8760) * 36e5 : 0;
+        await this.client.write(dev.service, dev.id, `lemonbeat/0/action_paused_until_${valve}`, {
+          vo: (0, import_schedule.encodePause)(until, offset)
+        });
+        await this.adapter.setState(id, hours, true);
+        this.adapter.log.info(
+          hours === 0 ? `Schedules of ${(0, import_states.deviceName)(dev)} resumed` : hours < 0 ? `Schedules of ${(0, import_states.deviceName)(dev)} paused permanently` : `Schedules of ${(0, import_states.deviceName)(dev)} paused for ${hours} h`
         );
       } else if (name === "buttonTime") {
         const seconds = Math.min(MAX_SECONDS, Math.max(0, Math.round(Number(state.val) * 60)));

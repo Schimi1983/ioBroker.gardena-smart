@@ -1,3 +1,4 @@
+import { encodePause, parseUtcOffset } from './schedule';
 import type { GatewayClient } from '../local/gateway-client';
 import { type GatewayEvent, deleteAtPath, encodeStringArray, mergeAtPath } from '../local/protocol';
 import { GEN1_COMMAND, GEN2_COMMAND_SOURCE, MODEL_KINDS } from './models';
@@ -317,6 +318,22 @@ export class DeviceManager {
 						: `Valve ${valve} of ${deviceName(dev)} closed`,
 				);
 				// the gateway confirms the new valve state with an event (ack = true)
+			} else if (name === 'pauseSchedule' && gen1) {
+				const hours = Number(state.val);
+				const offset = parseUtcOffset(fieldValue(getField(dev.tree, 'device', '0', 'utc_offset')));
+				const until =
+					hours < 0 ? ('permanent' as const) : hours > 0 ? Date.now() + Math.min(hours, 8760) * 3_600_000 : 0;
+				await this.client.write(dev.service, dev.id, `lemonbeat/0/action_paused_until_${valve}`, {
+					vo: encodePause(until, offset),
+				});
+				await this.adapter.setState(id, hours, true);
+				this.adapter.log.info(
+					hours === 0
+						? `Schedules of ${deviceName(dev)} resumed`
+						: hours < 0
+							? `Schedules of ${deviceName(dev)} paused permanently`
+							: `Schedules of ${deviceName(dev)} paused for ${hours} h`,
+				);
 			} else if (name === 'buttonTime') {
 				const seconds = Math.min(MAX_SECONDS, Math.max(0, Math.round(Number(state.val) * 60)));
 				if (gen1) {
