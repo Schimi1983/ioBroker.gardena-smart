@@ -244,6 +244,21 @@
       "native": {}
     },
     {
+      "_id": "cloud.devices",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Local devices when the names were last read",
+          "de": "Lokale Geräte beim letzten Lesen der Namen"
+        },
+        "type": "number",
+        "role": "value",
+        "read": true,
+        "write": false
+      },
+      "native": {}
+    },
+    {
       "_id": "cloud.refresh",
       "type": "state",
       "common": {

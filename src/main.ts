@@ -50,6 +50,8 @@ class GardenaSmart extends utils.Adapter {
 	/** consecutive "too many requests" answers (for the increasing waiting time) */
 	private cloudRejections = 0;
 	private cloudStarted = false;
+	/** number of local devices when the names were last read */
+	private cloudDeviceCount = 0;
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -151,6 +153,20 @@ class GardenaSmart extends utils.Adapter {
 				await this.devices.applyNames(this.cloudNames);
 			} else if (this.cloud && !this.cloudStarted) {
 				this.cloudStarted = true;
+				// @KI_HINWEIS: The names are stored in the device objects. After a restart they are only read
+				// again if the last successful read is older than a day or the number of devices changed –
+				// restarts (updates, settings) would otherwise cost 2 requests each.
+				const last = await this.getStateAsync('cloud.lastUpdate');
+				const known = await this.getStateAsync('cloud.devices');
+				const fresh = typeof last?.val === 'number' && Date.now() - last.val < CLOUD_REFRESH_MS;
+				if (fresh && known?.val === this.devices.count) {
+					this.cloudDeviceCount = this.devices.count;
+					this.log.debug('Device names from the cloud are up to date, no cloud request needed');
+				} else {
+					void this.refreshCloud();
+				}
+			} else if (this.cloud && this.devices.count > this.cloudDeviceCount) {
+				// a new device appeared: read its name
 				void this.refreshCloud();
 			}
 		} catch (err) {
@@ -267,6 +283,8 @@ class GardenaSmart extends utils.Adapter {
 			const renamed = this.devices ? await this.devices.applyNames(names) : 0;
 			await this.setState('cloud.connection', true, true);
 			await this.setState('cloud.lastUpdate', Date.now(), true);
+			this.cloudDeviceCount = this.devices?.count ?? 0;
+			await this.setState('cloud.devices', this.cloudDeviceCount, true);
 			await this.setState('cloud.blocked', false, true);
 			this.log.info(`GARDENA cloud: ${list.length} device(s) in the app, ${renamed} name(s) taken over`);
 		} catch (err) {

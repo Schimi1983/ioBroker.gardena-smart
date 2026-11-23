@@ -60,6 +60,8 @@ class GardenaSmart extends utils.Adapter {
   /** consecutive "too many requests" answers (for the increasing waiting time) */
   cloudRejections = 0;
   cloudStarted = false;
+  /** number of local devices when the names were last read */
+  cloudDeviceCount = 0;
   constructor(options = {}) {
     super({
       ...options,
@@ -152,6 +154,16 @@ class GardenaSmart extends utils.Adapter {
         await this.devices.applyNames(this.cloudNames);
       } else if (this.cloud && !this.cloudStarted) {
         this.cloudStarted = true;
+        const last = await this.getStateAsync("cloud.lastUpdate");
+        const known = await this.getStateAsync("cloud.devices");
+        const fresh = typeof (last == null ? void 0 : last.val) === "number" && Date.now() - last.val < CLOUD_REFRESH_MS;
+        if (fresh && (known == null ? void 0 : known.val) === this.devices.count) {
+          this.cloudDeviceCount = this.devices.count;
+          this.log.debug("Device names from the cloud are up to date, no cloud request needed");
+        } else {
+          void this.refreshCloud();
+        }
+      } else if (this.cloud && this.devices.count > this.cloudDeviceCount) {
         void this.refreshCloud();
       }
     } catch (err) {
@@ -240,6 +252,7 @@ class GardenaSmart extends utils.Adapter {
    * @param manual triggered by the user (may use the reserve kept for commands)
    */
   async refreshCloud(manual = false) {
+    var _a, _b;
     if (!this.cloud) {
       this.log.warn("Please enter App Key and App Secret in the settings to use the GARDENA cloud");
       return;
@@ -263,6 +276,8 @@ class GardenaSmart extends utils.Adapter {
       const renamed = this.devices ? await this.devices.applyNames(names) : 0;
       await this.setState("cloud.connection", true, true);
       await this.setState("cloud.lastUpdate", Date.now(), true);
+      this.cloudDeviceCount = (_b = (_a = this.devices) == null ? void 0 : _a.count) != null ? _b : 0;
+      await this.setState("cloud.devices", this.cloudDeviceCount, true);
       await this.setState("cloud.blocked", false, true);
       this.log.info(`GARDENA cloud: ${list.length} device(s) in the app, ${renamed} name(s) taken over`);
     } catch (err) {
