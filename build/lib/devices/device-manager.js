@@ -24,6 +24,7 @@ __export(device_manager_exports, {
 module.exports = __toCommonJS(device_manager_exports);
 var import_protocol = require("../local/protocol");
 var import_models = require("./models");
+var import_protocol2 = require("../local/protocol");
 var import_states = require("./states");
 const DEVICES_FOLDER = "devices";
 const MAX_SECONDS = 36e3;
@@ -164,9 +165,10 @@ class DeviceManager {
    * @param state new state (ack = false)
    */
   async handleCommand(id, state) {
+    var _a;
     const rel = id.slice(this.adapter.namespace.length + 1);
     const parts = rel.split(".");
-    if (parts[0] !== DEVICES_FOLDER || parts.length < 4) {
+    if (parts[0] !== DEVICES_FOLDER || parts.length < 3) {
       return;
     }
     const dev = this.devices.get(parts[1]);
@@ -175,8 +177,17 @@ class DeviceManager {
       return;
     }
     const channel = parts[2];
-    const name = parts[3];
+    const name = (_a = parts[3]) != null ? _a : "";
     const gen1 = dev.service === "lemonbeatd";
+    if (name === "duration") {
+      await this.adapter.setState(id, state.val, true);
+      return;
+    }
+    if ((0, import_protocol2.fieldValue)((0, import_protocol2.getField)(dev.tree, "connection_status", "0", "online")) === false) {
+      this.adapter.log.warn(`${(0, import_states.deviceName)(dev)} is offline, command ${channel}.${name} was not sent`);
+      await this.restore(dev, id);
+      return;
+    }
     try {
       if (channel === "info" && name === "identify") {
         if (gen1) {
@@ -203,8 +214,19 @@ class DeviceManager {
           await this.gen1Command(dev, import_models.GEN1_COMMAND.measureAmbientTemperature);
         }
       } else if (channel === "power") {
-        await this.powerCommand(dev, name, state, id);
+        await this.timerSwitch(dev, "power_timer", name, state, id, 60);
         return;
+      } else if (channel === "pump") {
+        if (name === "operatingMode") {
+          await this.client.write(dev.service, dev.id, "lemonbeat/0/operating_mode", {
+            vi: Number(state.val) ? 1 : 0
+          });
+        } else {
+          await this.timerSwitch(dev, "watering_timer_1", name, state, id, 30);
+          return;
+        }
+      } else if (channel === "mower") {
+        await this.mowerCommand(dev, name, id);
       } else {
         return;
       }
@@ -216,10 +238,6 @@ class DeviceManager {
   async valveCommand(dev, valve, name, state, id) {
     const base = id.slice(0, id.lastIndexOf("."));
     const gen1 = dev.service === "lemonbeatd";
-    if (name === "duration") {
-      await this.adapter.setState(id, state.val, true);
-      return;
-    }
     try {
       if (name === "open") {
         const open = state.val === true || state.val === "true" || state.val === 1;
@@ -255,18 +273,24 @@ class DeviceManager {
       await this.restore(dev, id);
     }
   }
-  async powerCommand(dev, name, state, id) {
-    if (name === "duration") {
-      await this.adapter.setState(id, state.val, true);
-      return;
-    }
+  /**
+   * Switches a Gen1 timer resource (Power Adapter, Pump): >0 = on for seconds, 0 = off.
+   *
+   * @param dev device
+   * @param resource timer resource in `lemonbeat/0`
+   * @param name state name (`on`)
+   * @param state new state
+   * @param id full state id
+   * @param defaultMinutes fallback duration
+   */
+  async timerSwitch(dev, resource, name, state, id, defaultMinutes) {
     if (name !== "on") {
       return;
     }
     try {
       const on = state.val === true || state.val === "true" || state.val === 1;
-      const seconds = on ? await this.durationSeconds(id.replace(/\.on$/, ".duration"), 60) : 0;
-      await this.client.write(dev.service, dev.id, "lemonbeat/0/power_timer", { vi: seconds });
+      const seconds = on ? await this.durationSeconds(id.replace(/\.on$/, ".duration"), defaultMinutes) : 0;
+      await this.client.write(dev.service, dev.id, `lemonbeat/0/${resource}`, { vi: seconds });
       this.adapter.log.info(
         on ? `${(0, import_states.deviceName)(dev)} switched on for ${seconds / 60} min` : `${(0, import_states.deviceName)(dev)} switched off`
       );
@@ -274,6 +298,46 @@ class DeviceManager {
       this.adapter.log.warn(`${(0, import_states.deviceName)(dev)}: ${err.message}`);
       await this.restore(dev, id);
     }
+  }
+  /**
+   * Mower commands for Gen1 (Lemonbeat) and Gen2 (LwM2M) mowers.
+   *
+   * @param dev device
+   * @param name command (start, parkUntilNextTask, parkUntilFurtherNotice, pause)
+   * @param id full state id
+   */
+  async mowerCommand(dev, name, id) {
+    const gen1 = dev.service === "lemonbeatd";
+    const seconds = name === "start" ? await this.durationSeconds(id.replace(/\.start$/, ".duration"), 60) : 0;
+    if (name === "start" || name === "parkUntilNextTask") {
+      if (!gen1) {
+        await this.client.execute(dev.service, dev.id, "smart_system_mower_api/0/manual_start", {
+          as: (0, import_protocol.encodeStringArray)([String(seconds)])
+        });
+      } else if ((0, import_protocol2.getField)(dev.tree, "lemonbeat", "0", "mower_timer")) {
+        await this.client.write(dev.service, dev.id, "lemonbeat/0/mower_timer", { vi: seconds });
+      } else {
+        const data = Buffer.alloc(6);
+        data.writeUInt32BE(seconds, 2);
+        await this.client.write(dev.service, dev.id, "lemonbeat/0/mower_timer_with_distance", {
+          vo: data.toString("base64")
+        });
+      }
+    } else if (name === "parkUntilFurtherNotice") {
+      if (gen1) {
+        const data = Buffer.from([2042 & 255, 2042 >> 8, 12, 31, 22, 0]);
+        await this.client.write(dev.service, dev.id, "lemonbeat/0/action_paused_until_1", {
+          vo: data.toString("base64")
+        });
+      } else {
+        await this.client.execute(dev.service, dev.id, "smart_system_mower_api/0/park_until_further_notice");
+      }
+    } else if (name === "pause" && !gen1) {
+      await this.client.execute(dev.service, dev.id, "mower_app/0/pause");
+    } else {
+      return;
+    }
+    this.adapter.log.info(`${(0, import_states.deviceName)(dev)}: ${name}${name === "start" ? ` for ${seconds / 60} min` : ""}`);
   }
   async durationSeconds(durationId, defaultMinutes) {
     const st = await this.adapter.getStateAsync(durationId);

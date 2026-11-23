@@ -20,7 +20,8 @@ var states_exports = {};
 __export(states_exports, {
   buildDevice: () => buildDevice,
   buildRawStates: () => buildRawStates,
-  deviceName: () => deviceName
+  deviceName: () => deviceName,
+  mowerState: () => mowerState
 });
 module.exports = __toCommonJS(states_exports);
 var import_protocol = require("../local/protocol");
@@ -203,6 +204,9 @@ function buildDevice(dev) {
     case "mower2":
       addMowerStatus(t, dev.kind, channels, states);
       break;
+    case "pump":
+      addPump(t, channels, states);
+      break;
     default:
       break;
   }
@@ -322,8 +326,8 @@ function addGen1Valves(t, count, channels, states, waterControl) {
       });
     }
     if (waterControl) {
-      const button = v(t, "lemonbeat", "0", "button_config_time");
-      if (button.value !== null) {
+      const button2 = v(t, "lemonbeat", "0", "button_config_time");
+      if (button2.value !== null) {
         states.push({
           id: `${ch}.buttonTime`,
           common: {
@@ -339,8 +343,8 @@ function addGen1Valves(t, count, channels, states, waterControl) {
             read: true,
             write: true
           },
-          value: typeof button.value === "number" ? Math.round(button.value / 60) : null,
-          ts: button.ts
+          value: typeof button2.value === "number" ? Math.round(button2.value / 60) : null,
+          ts: button2.ts
         });
       }
     }
@@ -414,8 +418,8 @@ function addGen2Valves(t, channels, states) {
       value: num(error.value),
       ts: error.ts
     });
-    const button = v(t, "actuator", id, "default_duration_seconds");
-    if (button.value !== null) {
+    const button2 = v(t, "actuator", id, "default_duration_seconds");
+    if (button2.value !== null) {
       states.push({
         id: `${ch}.buttonTime`,
         common: {
@@ -431,8 +435,8 @@ function addGen2Valves(t, channels, states) {
           read: true,
           write: true
         },
-        value: typeof button.value === "number" ? Math.round(button.value / 60) : null,
-        ts: button.ts
+        value: typeof button2.value === "number" ? Math.round(button2.value / 60) : null,
+        ts: button2.ts
       });
     }
   }
@@ -548,37 +552,230 @@ function addPowerAdapter(t, channels, states) {
     }
   });
 }
+const MOWER_STATES = {
+  parked: "parked",
+  leaving: "leaving",
+  mowing: "mowing",
+  paused: "paused",
+  returning: "returning",
+  charging: "charging",
+  error: "error",
+  unknown: "unknown"
+};
+function mowerState(kind, status, gen2State) {
+  if (status === null) {
+    return null;
+  }
+  if (kind === "mower1") {
+    if ([7, 8, 16, 17, 18].includes(status)) {
+      return "parked";
+    }
+    if (status === 4) {
+      return "leaving";
+    }
+    if (status === 1 || status === 15) {
+      return "mowing";
+    }
+    if ([0, 5, 6, 9, 10, 14].includes(status)) {
+      return "paused";
+    }
+    if (status === 2) {
+      return "returning";
+    }
+    if (status === 3) {
+      return "charging";
+    }
+    if (status === 12 || status === 13) {
+      return "error";
+    }
+    return "unknown";
+  }
+  switch (status) {
+    case 1:
+      return "charging";
+    case 2:
+      return "leaving";
+    case 3:
+      return "mowing";
+    case 4:
+      return "returning";
+    case 5:
+      return "parked";
+    case 6:
+      return "paused";
+    default:
+      if (gen2State === 5) {
+        return "paused";
+      }
+      if (gen2State === 3 || gen2State === 8) {
+        return "error";
+      }
+      return "unknown";
+  }
+}
+function button(id, name) {
+  return { id, common: { name, type: "boolean", role: "button", read: false, write: true } };
+}
 function addMowerStatus(t, kind, channels, states) {
   channels.push({ id: "mower", name: n("Mower", "M\xE4hroboter") });
+  const raw = kind === "mower1" ? v(t, "lemonbeat", "0", "status") : v(t, "mower_app", "0", "activity");
+  const gen2State = kind === "mower2" ? num(v(t, "mower_app", "0", "state").value) : null;
+  states.push({
+    id: "mower.state",
+    common: {
+      name: n("State", "Zustand"),
+      type: "string",
+      role: "text",
+      read: true,
+      write: false,
+      states: MOWER_STATES
+    },
+    value: mowerState(kind, num(raw.value), gen2State),
+    ts: raw.ts
+  });
+  states.push({
+    id: kind === "mower1" ? "mower.status" : "mower.activity",
+    common: {
+      name: n("State (raw value)", "Zustand (Rohwert)"),
+      type: "number",
+      role: "value",
+      read: true,
+      write: false,
+      states: kind === "mower1" ? import_models.GEN1_MOWER_STATUS : import_models.GEN2_MOWER_ACTIVITY
+    },
+    value: num(raw.value),
+    ts: raw.ts
+  });
   if (kind === "mower1") {
-    const status = v(t, "lemonbeat", "0", "status");
+    for (const [res, id, name, unit] of [
+      ["charging_cycles", "chargingCycles", n("Charging cycles", "Ladezyklen"), ""],
+      ["collisions", "collisions", n("Collisions", "Kollisionen"), ""],
+      ["cutting_time", "cuttingTime", n("Cutting time", "M\xE4hzeit"), "h"],
+      ["running_time", "runningTime", n("Running time", "Laufzeit"), "h"],
+      ["last_error_code", "lastErrorCode", n("Last error code", "Letzter Fehlercode"), ""]
+    ]) {
+      const val = v(t, "lemonbeat", "0", res);
+      if (val.value !== null) {
+        states.push({
+          id: `mower.${id}`,
+          common: {
+            name,
+            type: "number",
+            role: "value",
+            ...unit ? { unit } : {},
+            read: true,
+            write: false
+          },
+          value: num(val.value),
+          ts: val.ts
+        });
+      }
+    }
+  }
+  states.push({
+    id: "mower.duration",
+    common: {
+      name: n('Mowing time when started via "start"', 'M\xE4hdauer beim Start \xFCber "start"'),
+      type: "number",
+      role: "level.timer",
+      unit: "min",
+      min: 1,
+      max: 1440,
+      def: 60,
+      read: true,
+      write: true
+    }
+  });
+  states.push(button("mower.start", n('Start mowing (for "duration")', 'M\xE4hen starten (f\xFCr "duration")')));
+  states.push(
+    button("mower.parkUntilNextTask", n("Park until the next scheduled task", "Parken bis zum n\xE4chsten Zeitplan"))
+  );
+  states.push(button("mower.parkUntilFurtherNotice", n("Park until further notice", "Parken bis auf Weiteres")));
+  if (kind === "mower2") {
+    states.push(button("mower.pause", n("Pause at current position", "An aktueller Position pausieren")));
+  }
+}
+function addPump(t, channels, states) {
+  channels.push({ id: "pump", name: n("Pump", "Pumpe") });
+  const timer = v(t, "lemonbeat", "0", "watering_timer_1");
+  const timerValue = num(timer.value);
+  states.push({
+    id: "pump.on",
+    common: {
+      name: n("Pump on (true = on, false = off)", "Pumpe an (true = an, false = aus)"),
+      type: "boolean",
+      role: "switch",
+      read: true,
+      write: true
+    },
+    value: timerValue === null ? null : timerValue !== 0,
+    ts: timer.ts
+  });
+  states.push({
+    id: "pump.duration",
+    common: {
+      name: n('Running time when switched on via "on"', 'Laufzeit beim Einschalten \xFCber "on"'),
+      type: "number",
+      role: "level.timer",
+      unit: "min",
+      min: 1,
+      max: 600,
+      def: 30,
+      read: true,
+      write: true
+    }
+  });
+  const motor = v(t, "lemonbeat", "0", "pump_on_off");
+  states.push({
+    id: "pump.running",
+    common: {
+      name: n("Motor running", "Motor l\xE4uft"),
+      type: "boolean",
+      role: "indicator.working",
+      read: true,
+      write: false
+    },
+    value: motor.value === null ? null : motor.value === 1,
+    ts: motor.ts
+  });
+  for (const [res, id, name, role, unit] of [
+    ["outlet_pressure", "pressure", n("Outlet pressure", "Ausgangsdruck"), "value.pressure", "bar"],
+    ["outlet_temperature", "temperature", n("Water temperature", "Wassertemperatur"), "value.temperature", "\xB0C"],
+    ["flow_rate", "flowRate", n("Flow rate", "Durchfluss"), "value.flow", "l/h"],
+    ["flow_total", "flowTotal", n("Total water volume", "Gesamte Wassermenge"), "value", "m\xB3"],
+    [
+      "flow_since_last_reset",
+      "flowSinceReset",
+      n("Water volume since reset", "Wassermenge seit Zur\xFCcksetzen"),
+      "value",
+      "m\xB3"
+    ],
+    ["valve_error_1", "error", n("Error code (0 = no error)", "Fehlercode (0 = kein Fehler)"), "value", ""]
+  ]) {
+    const val = v(t, "lemonbeat", "0", res);
+    if (val.value !== null) {
+      states.push({
+        id: `pump.${id}`,
+        common: { name, type: "number", role, ...unit ? { unit } : {}, read: true, write: false },
+        value: num(val.value),
+        ts: val.ts
+      });
+    }
+  }
+  const mode = v(t, "lemonbeat", "0", "operating_mode");
+  if (mode.value !== null) {
     states.push({
-      id: "mower.status",
+      id: "pump.operatingMode",
       common: {
-        name: n("Status", "Status"),
+        name: n("Operating mode", "Betriebsart"),
         type: "number",
-        role: "value",
+        role: "level",
         read: true,
-        write: false,
-        states: import_models.GEN1_MOWER_STATUS
+        write: true,
+        states: { 0: "scheduled", 1: "automatic" }
       },
-      value: num(status.value),
-      ts: status.ts
-    });
-  } else {
-    const activity = v(t, "mower_app", "0", "activity");
-    states.push({
-      id: "mower.activity",
-      common: {
-        name: n("Activity", "Aktivit\xE4t"),
-        type: "number",
-        role: "value",
-        read: true,
-        write: false,
-        states: import_models.GEN2_MOWER_ACTIVITY
-      },
-      value: num(activity.value),
-      ts: activity.ts
+      value: num(mode.value),
+      ts: mode.ts
     });
   }
 }
@@ -630,6 +827,7 @@ function safe(part) {
 0 && (module.exports = {
   buildDevice,
   buildRawStates,
-  deviceName
+  deviceName,
+  mowerState
 });
 //# sourceMappingURL=states.js.map

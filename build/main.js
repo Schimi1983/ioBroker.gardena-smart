@@ -32,6 +32,11 @@ const COMMAND_PATTERNS = [
   "devices.*.closeAll",
   "devices.*.measure",
   "devices.*.on",
+  "devices.*.start",
+  "devices.*.parkUntilNextTask",
+  "devices.*.parkUntilFurtherNotice",
+  "devices.*.pause",
+  "devices.*.operatingMode",
   "info.trustNewCertificate"
 ];
 class GardenaSmart extends utils.Adapter {

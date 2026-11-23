@@ -254,6 +254,9 @@ export function buildDevice(dev: DeviceSnapshot): { channels: ChannelSpec[]; sta
 		case 'mower2':
 			addMowerStatus(t, dev.kind, channels, states);
 			break;
+		case 'pump':
+			addPump(t, channels, states);
+			break;
 		default:
 			break;
 	}
@@ -614,6 +617,81 @@ function addPowerAdapter(t: Record<string, unknown>, channels: ChannelSpec[], st
 	});
 }
 
+/** Simplified mower state, the same for all mower generations */
+const MOWER_STATES: Record<string, string> = {
+	parked: 'parked',
+	leaving: 'leaving',
+	mowing: 'mowing',
+	paused: 'paused',
+	returning: 'returning',
+	charging: 'charging',
+	error: 'error',
+	unknown: 'unknown',
+};
+
+/**
+ * Maps the raw mower values to a simple state.
+ *
+ * @param kind mower generation
+ * @param status Gen1 status or Gen2 activity
+ * @param gen2State Gen2 state (only used when the activity is NONE)
+ */
+export function mowerState(kind: DeviceKind, status: number | null, gen2State: number | null): string | null {
+	if (status === null) {
+		return null;
+	}
+	if (kind === 'mower1') {
+		if ([7, 8, 16, 17, 18].includes(status)) {
+			return 'parked';
+		}
+		if (status === 4) {
+			return 'leaving';
+		}
+		if (status === 1 || status === 15) {
+			return 'mowing';
+		}
+		if ([0, 5, 6, 9, 10, 14].includes(status)) {
+			return 'paused';
+		}
+		if (status === 2) {
+			return 'returning';
+		}
+		if (status === 3) {
+			return 'charging';
+		}
+		if (status === 12 || status === 13) {
+			return 'error';
+		}
+		return 'unknown';
+	}
+	switch (status) {
+		case 1:
+			return 'charging';
+		case 2:
+			return 'leaving';
+		case 3:
+			return 'mowing';
+		case 4:
+			return 'returning';
+		case 5:
+			return 'parked';
+		case 6:
+			return 'paused';
+		default:
+			if (gen2State === 5) {
+				return 'paused';
+			}
+			if (gen2State === 3 || gen2State === 8) {
+				return 'error';
+			}
+			return 'unknown';
+	}
+}
+
+function button(id: string, name: Name): StateSpec {
+	return { id, common: { name, type: 'boolean', role: 'button', read: false, write: true } };
+}
+
 function addMowerStatus(
 	t: Record<string, unknown>,
 	kind: DeviceKind,
@@ -621,35 +699,165 @@ function addMowerStatus(
 	states: StateSpec[],
 ): void {
 	channels.push({ id: 'mower', name: n('Mower', 'Mähroboter') });
+	const raw = kind === 'mower1' ? v(t, 'lemonbeat', '0', 'status') : v(t, 'mower_app', '0', 'activity');
+	const gen2State = kind === 'mower2' ? num(v(t, 'mower_app', '0', 'state').value) : null;
+	states.push({
+		id: 'mower.state',
+		common: {
+			name: n('State', 'Zustand'),
+			type: 'string',
+			role: 'text',
+			read: true,
+			write: false,
+			states: MOWER_STATES,
+		},
+		value: mowerState(kind, num(raw.value), gen2State),
+		ts: raw.ts,
+	});
+	states.push({
+		id: kind === 'mower1' ? 'mower.status' : 'mower.activity',
+		common: {
+			name: n('State (raw value)', 'Zustand (Rohwert)'),
+			type: 'number',
+			role: 'value',
+			read: true,
+			write: false,
+			states: kind === 'mower1' ? GEN1_MOWER_STATUS : GEN2_MOWER_ACTIVITY,
+		},
+		value: num(raw.value),
+		ts: raw.ts,
+	});
 	if (kind === 'mower1') {
-		const status = v(t, 'lemonbeat', '0', 'status');
+		for (const [res, id, name, unit] of [
+			['charging_cycles', 'chargingCycles', n('Charging cycles', 'Ladezyklen'), ''],
+			['collisions', 'collisions', n('Collisions', 'Kollisionen'), ''],
+			['cutting_time', 'cuttingTime', n('Cutting time', 'Mähzeit'), 'h'],
+			['running_time', 'runningTime', n('Running time', 'Laufzeit'), 'h'],
+			['last_error_code', 'lastErrorCode', n('Last error code', 'Letzter Fehlercode'), ''],
+		] as const) {
+			const val = v(t, 'lemonbeat', '0', res);
+			if (val.value !== null) {
+				states.push({
+					id: `mower.${id}`,
+					common: {
+						name,
+						type: 'number',
+						role: 'value',
+						...(unit ? { unit } : {}),
+						read: true,
+						write: false,
+					},
+					value: num(val.value),
+					ts: val.ts,
+				});
+			}
+		}
+	}
+	states.push({
+		id: 'mower.duration',
+		common: {
+			name: n('Mowing time when started via "start"', 'Mähdauer beim Start über "start"'),
+			type: 'number',
+			role: 'level.timer',
+			unit: 'min',
+			min: 1,
+			max: 1440,
+			def: 60,
+			read: true,
+			write: true,
+		},
+	});
+	states.push(button('mower.start', n('Start mowing (for "duration")', 'Mähen starten (für "duration")')));
+	states.push(
+		button('mower.parkUntilNextTask', n('Park until the next scheduled task', 'Parken bis zum nächsten Zeitplan')),
+	);
+	states.push(button('mower.parkUntilFurtherNotice', n('Park until further notice', 'Parken bis auf Weiteres')));
+	if (kind === 'mower2') {
+		states.push(button('mower.pause', n('Pause at current position', 'An aktueller Position pausieren')));
+	}
+}
+
+function addPump(t: Record<string, unknown>, channels: ChannelSpec[], states: StateSpec[]): void {
+	channels.push({ id: 'pump', name: n('Pump', 'Pumpe') });
+	const timer = v(t, 'lemonbeat', '0', 'watering_timer_1');
+	const timerValue = num(timer.value);
+	states.push({
+		id: 'pump.on',
+		common: {
+			name: n('Pump on (true = on, false = off)', 'Pumpe an (true = an, false = aus)'),
+			type: 'boolean',
+			role: 'switch',
+			read: true,
+			write: true,
+		},
+		value: timerValue === null ? null : timerValue !== 0,
+		ts: timer.ts,
+	});
+	states.push({
+		id: 'pump.duration',
+		common: {
+			name: n('Running time when switched on via "on"', 'Laufzeit beim Einschalten über "on"'),
+			type: 'number',
+			role: 'level.timer',
+			unit: 'min',
+			min: 1,
+			max: 600,
+			def: 30,
+			read: true,
+			write: true,
+		},
+	});
+	const motor = v(t, 'lemonbeat', '0', 'pump_on_off');
+	states.push({
+		id: 'pump.running',
+		common: {
+			name: n('Motor running', 'Motor läuft'),
+			type: 'boolean',
+			role: 'indicator.working',
+			read: true,
+			write: false,
+		},
+		value: motor.value === null ? null : motor.value === 1,
+		ts: motor.ts,
+	});
+	for (const [res, id, name, role, unit] of [
+		['outlet_pressure', 'pressure', n('Outlet pressure', 'Ausgangsdruck'), 'value.pressure', 'bar'],
+		['outlet_temperature', 'temperature', n('Water temperature', 'Wassertemperatur'), 'value.temperature', '°C'],
+		['flow_rate', 'flowRate', n('Flow rate', 'Durchfluss'), 'value.flow', 'l/h'],
+		['flow_total', 'flowTotal', n('Total water volume', 'Gesamte Wassermenge'), 'value', 'm³'],
+		[
+			'flow_since_last_reset',
+			'flowSinceReset',
+			n('Water volume since reset', 'Wassermenge seit Zurücksetzen'),
+			'value',
+			'm³',
+		],
+		['valve_error_1', 'error', n('Error code (0 = no error)', 'Fehlercode (0 = kein Fehler)'), 'value', ''],
+	] as const) {
+		const val = v(t, 'lemonbeat', '0', res);
+		if (val.value !== null) {
+			states.push({
+				id: `pump.${id}`,
+				common: { name, type: 'number', role, ...(unit ? { unit } : {}), read: true, write: false },
+				value: num(val.value),
+				ts: val.ts,
+			});
+		}
+	}
+	const mode = v(t, 'lemonbeat', '0', 'operating_mode');
+	if (mode.value !== null) {
 		states.push({
-			id: 'mower.status',
+			id: 'pump.operatingMode',
 			common: {
-				name: n('Status', 'Status'),
+				name: n('Operating mode', 'Betriebsart'),
 				type: 'number',
-				role: 'value',
+				role: 'level',
 				read: true,
-				write: false,
-				states: GEN1_MOWER_STATUS,
+				write: true,
+				states: { 0: 'scheduled', 1: 'automatic' },
 			},
-			value: num(status.value),
-			ts: status.ts,
-		});
-	} else {
-		const activity = v(t, 'mower_app', '0', 'activity');
-		states.push({
-			id: 'mower.activity',
-			common: {
-				name: n('Activity', 'Aktivität'),
-				type: 'number',
-				role: 'value',
-				read: true,
-				write: false,
-				states: GEN2_MOWER_ACTIVITY,
-			},
-			value: num(activity.value),
-			ts: activity.ts,
+			value: num(mode.value),
+			ts: mode.ts,
 		});
 	}
 }
