@@ -21,11 +21,16 @@ __export(schedule_exports, {
   decodePause: () => decodePause,
   decodeSchedules: () => decodeSchedules,
   encodePause: () => encodePause,
-  parseUtcOffset: () => parseUtcOffset
+  parseUtcOffset: () => parseUtcOffset,
+  weekdayNames: () => weekdayNames
 });
 module.exports = __toCommonJS(schedule_exports);
 const PERMANENT_YEAR = 2038;
 const PERMANENT = { year: 2038, month: 1, day: 18, hour: 1, minute: 0 };
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function weekdayNames(mask) {
+  return [1, 2, 3, 4, 5, 6, 0].filter((bit) => (mask & 1 << bit) !== 0).map((bit) => WEEKDAYS[bit]);
+}
 function parseUtcOffset(text) {
   var _a;
   const m = typeof text === "string" ? /^UTC([+-])(\d{1,2}):?(\d{2})?$/.exec(text.trim()) : null;
@@ -104,6 +109,7 @@ function hhmm(minutes) {
   decodePause,
   decodeSchedules,
   encodePause,
-  parseUtcOffset
+  parseUtcOffset,
+  weekdayNames
 });
 //# sourceMappingURL=schedule.js.map

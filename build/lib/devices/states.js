@@ -301,7 +301,12 @@ function addSchedules(t, ch, states) {
   if (raw.value === null) {
     return;
   }
-  const list = (0, import_schedule.decodeSchedules)(raw.value).map(({ start, end, minutes, days }) => ({ start, end, minutes, days }));
+  const list = (0, import_schedule.decodeSchedules)(raw.value).map(({ start, end, minutes, days }) => ({
+    start,
+    end,
+    minutes,
+    days: (0, import_schedule.weekdayNames)(days)
+  }));
   states.push({
     id: `${ch}.schedules`,
     common: {

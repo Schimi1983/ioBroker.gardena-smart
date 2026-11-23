@@ -1,4 +1,4 @@
-import { decodePause, decodeSchedules, parseUtcOffset } from './schedule';
+import { decodePause, decodeSchedules, parseUtcOffset, weekdayNames } from './schedule';
 import {
 	type ResourceValue,
 	type ValueField,
@@ -379,7 +379,12 @@ function addSchedules(t: Record<string, unknown>, ch: string, states: StateSpec[
 	if (raw.value === null) {
 		return;
 	}
-	const list = decodeSchedules(raw.value).map(({ start, end, minutes, days }) => ({ start, end, minutes, days }));
+	const list = decodeSchedules(raw.value).map(({ start, end, minutes, days }) => ({
+		start,
+		end,
+		minutes,
+		days: weekdayNames(days),
+	}));
 	states.push({
 		id: `${ch}.schedules`,
 		common: {

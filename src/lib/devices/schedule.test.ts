@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { decodePause, decodeSchedules, encodePause, parseUtcOffset } from './schedule';
+import { decodePause, decodeSchedules, encodePause, parseUtcOffset, weekdayNames } from './schedule';
 
 describe('schedule helpers (values recorded on a Water Control)', () => {
 	it('parses the device time zone', () => {
@@ -31,5 +31,10 @@ describe('schedule helpers (values recorded on a Water Control)', () => {
 			{ id: 0x81, days: 0x7f, start: '08:04', end: '08:39', minutes: 35 },
 		]);
 		expect(decodeSchedules('')).to.deep.equal([]);
+	});
+
+	it('names the weekdays (app: without Sunday = 0x7E, without Saturday = 0x3F)', () => {
+		expect(weekdayNames(0x7e)).to.deep.equal(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+		expect(weekdayNames(0x3f)).to.deep.equal(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sun']);
 	});
 });

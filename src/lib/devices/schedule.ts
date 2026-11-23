@@ -7,12 +7,26 @@
  *   (device/0/utc_offset). Empty = not paused. "Permanently" in the app = 2038-01-18 01:00.
  * - schedule_config: 7 bytes per schedule: id, weekday bit mask (0x7F = every day), hour, minute,
  *   duration in minutes (2 bytes little endian, assumed), 1 byte unknown. The id changes when the app saves.
+ *   Weekday bits: bit 0 = Sunday, bit 1 = Monday … bit 6 = Saturday (without Sunday = 0x7E, without Saturday = 0x3F).
  */
 
 /** Year from which a pause counts as "permanent" */
 const PERMANENT_YEAR = 2038;
 /** Value the GARDENA app writes for "permanently" */
 const PERMANENT = { year: 2038, month: 1, day: 18, hour: 1, minute: 0 };
+
+/** Weekday names in bit order (bit 0 = Sunday) */
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/**
+ * Names of the weekdays in a bit mask, Monday first.
+ *
+ * @param mask weekday bit mask (bit 0 = Sunday)
+ * @returns e.g. ["Mon", "Tue", "Sun"]
+ */
+export function weekdayNames(mask: number): string[] {
+	return [1, 2, 3, 4, 5, 6, 0].filter(bit => (mask & (1 << bit)) !== 0).map(bit => WEEKDAYS[bit]);
+}
 
 /** One schedule of a valve */
 export interface ScheduleEntry {
