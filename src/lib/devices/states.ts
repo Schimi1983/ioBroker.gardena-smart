@@ -299,7 +299,7 @@ export function wateringEnd(seconds: number | null, ts: number | undefined): num
 	}
 	// @KI_HINWEIS: The gateway reports the remaining seconds at the time stamp of the value (verified on a
 	// Water Control 18869: 60 s started, 57 reported 3 s later, closed exactly at ts + 57 s). Negative values
-	// (watering by schedule) are assumed to work the same way – not verified yet.
+	// = watering by schedule, same meaning (verified: -117 at 20:10:00, closed at 20:11:57).
 	return ts === undefined ? null : ts + Math.abs(seconds) * 1000;
 }
 
