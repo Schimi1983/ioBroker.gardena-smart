@@ -282,6 +282,26 @@ function addAmbientTemperature(t: Record<string, unknown>, states: StateSpec[]):
 	}
 }
 
+/**
+ * End of the current watering of a first generation valve.
+ *
+ * @param seconds value of `watering_timer_N`
+ * @param ts time stamp of that value (ms)
+ * @returns end time in ms, 0 if the valve is closed, null if unknown
+ */
+export function wateringEnd(seconds: number | null, ts: number | undefined): number | null {
+	if (seconds === null) {
+		return null;
+	}
+	if (seconds === 0) {
+		return 0;
+	}
+	// @KI_HINWEIS: The gateway reports the remaining seconds at the time stamp of the value (verified on a
+	// Water Control 18869: 60 s started, 57 reported 3 s later, closed exactly at ts + 57 s). Negative values
+	// (watering by schedule) are assumed to work the same way – not verified yet.
+	return ts === undefined ? null : ts + Math.abs(seconds) * 1000;
+}
+
 function valveControls(states: StateSpec[], ch: string, open: boolean | null, ts: number | undefined): void {
 	states.push({
 		id: `${ch}.open`,
@@ -357,6 +377,18 @@ function addGen1Valves(
 				states: { off: 'off', manual: 'manual', schedule: 'schedule' },
 			},
 			value: timerValue === null ? null : timerValue === 0 ? 'off' : timerValue > 0 ? 'manual' : 'schedule',
+			ts: timer.ts,
+		});
+		states.push({
+			id: `${ch}.endTime`,
+			common: {
+				name: n('Watering ends at (0 = not watering)', 'Bewässerung endet um (0 = läuft nicht)'),
+				type: 'number',
+				role: 'value.time',
+				read: true,
+				write: false,
+			},
+			value: wateringEnd(timerValue, timer.ts),
 			ts: timer.ts,
 		});
 		const error = v(t, 'lemonbeat', '0', `valve_error_${i}`);

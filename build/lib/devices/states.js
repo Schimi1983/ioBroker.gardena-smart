@@ -21,7 +21,8 @@ __export(states_exports, {
   buildDevice: () => buildDevice,
   buildRawStates: () => buildRawStates,
   deviceName: () => deviceName,
-  mowerState: () => mowerState
+  mowerState: () => mowerState,
+  wateringEnd: () => wateringEnd
 });
 module.exports = __toCommonJS(states_exports);
 var import_protocol = require("../local/protocol");
@@ -230,6 +231,15 @@ function addAmbientTemperature(t, states) {
     });
   }
 }
+function wateringEnd(seconds, ts) {
+  if (seconds === null) {
+    return null;
+  }
+  if (seconds === 0) {
+    return 0;
+  }
+  return ts === void 0 ? null : ts + Math.abs(seconds) * 1e3;
+}
 function valveControls(states, ch, open, ts) {
   states.push({
     id: `${ch}.open`,
@@ -297,6 +307,18 @@ function addGen1Valves(t, count, channels, states, waterControl) {
         states: { off: "off", manual: "manual", schedule: "schedule" }
       },
       value: timerValue === null ? null : timerValue === 0 ? "off" : timerValue > 0 ? "manual" : "schedule",
+      ts: timer.ts
+    });
+    states.push({
+      id: `${ch}.endTime`,
+      common: {
+        name: n("Watering ends at (0 = not watering)", "Bew\xE4sserung endet um (0 = l\xE4uft nicht)"),
+        type: "number",
+        role: "value.time",
+        read: true,
+        write: false
+      },
+      value: wateringEnd(timerValue, timer.ts),
       ts: timer.ts
     });
     const error = v(t, "lemonbeat", "0", `valve_error_${i}`);
@@ -828,6 +850,7 @@ function safe(part) {
   buildDevice,
   buildRawStates,
   deviceName,
-  mowerState
+  mowerState,
+  wateringEnd
 });
 //# sourceMappingURL=states.js.map

@@ -39,6 +39,7 @@ Der Adapter liest die Namen dann einmal am Tag (etwa 2 Abfragen). GARDENA erlaub
 | `valve1.duration` | Wie lange das Ventil offen bleibt, wenn du `open` auf `true` setzt (Minuten) |
 | `valve1.active` | Bewässerung läuft (auch per Zeitplan oder Taste am Gerät) |
 | `valve1.source` | Wer bewässert: `manual`, `schedule` oder `off` |
+| `valve1.endTime` | Wann die Bewässerung endet (Zeitstempel, 0 = läuft nicht) – praktisch für „läuft noch 7 min“ |
 | `valve1.buttonTime` | Bewässerungsdauer bei Tastendruck am Gerät (Minuten) |
 | `sensor.soilMoisture` | Bodenfeuchte in % |
 | `sensor.measure` | Drücken, um sofort zu messen |

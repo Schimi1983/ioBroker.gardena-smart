@@ -72,6 +72,7 @@ Each device appears as `gardena-smart.0.devices.<device id>` with its name from 
 | `valve1.duration` | How long the valve stays open when you set `open` to `true` (minutes) |
 | `valve1.active` | Watering is running (also when started by a schedule or the button on the device) |
 | `valve1.source` | Who started the watering: `manual`, `schedule` or `off` |
+| `valve1.endTime` | When the watering ends (time stamp, 0 = not watering) – handy for "7 min left" |
 | `valve1.buttonTime` | Watering time when someone presses the button on the device (minutes) |
 | `sensor.soilMoisture` | Soil moisture in % |
 | `sensor.measure` | Press to measure now |

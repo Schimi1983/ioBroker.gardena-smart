@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { type DeviceSnapshot, buildDevice, buildRawStates, deviceName } from './states';
+import { type DeviceSnapshot, buildDevice, buildRawStates, deviceName, wateringEnd } from './states';
 
 const f = (v: Record<string, unknown>): Record<string, unknown> => ({ ...v, ts: 1700000000 });
 
@@ -119,5 +119,13 @@ describe('device states', () => {
 		const ids = raw.map(r => r.id);
 		expect(ids).to.include('raw.lemonbeat.0.battery_level');
 		expect(ids.every(id => /^[A-Za-z0-9_.-]+$/.test(id))).to.equal(true);
+	});
+});
+
+describe('wateringEnd', () => {
+	it('adds the remaining seconds to the time stamp', () => {
+		expect(wateringEnd(57, 1_795_458_351_000)).to.equal(1_795_458_408_000);
+		expect(wateringEnd(0, 1_795_458_351_000)).to.equal(0);
+		expect(wateringEnd(null, 1_795_458_351_000)).to.equal(null);
 	});
 });
