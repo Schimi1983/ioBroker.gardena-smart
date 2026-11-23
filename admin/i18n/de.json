@@ -9,5 +9,9 @@
 	"Port": "Port",
 	"port_help": "Nur bei Bedarf ändern (Standard 8443)",
 	"Show raw values": "Rohwerte anzeigen",
-	"raw_help": "Legt zusätzlich alle Werte an, die das Gateway meldet (Ordner \"raw\"). Nur für die Fehlersuche nötig."
+	"raw_help": "Legt zusätzlich alle Werte an, die das Gateway meldet (Ordner \"raw\"). Nur für die Fehlersuche nötig.",
+	"header_support": "Entwicklung unterstützen",
+	"support_text": "Der Adapter ist kostenlos. Wenn er dir nützt, kannst du die Entwicklung freiwillig unterstützen.",
+	"link_sponsor": "GitHub Sponsors",
+	"link_paypal": "Per PayPal spenden"
 }

@@ -9,5 +9,9 @@
 	"Port": "端口",
 	"port_help": "仅在必要时更改（默认 8443）",
 	"Show raw values": "显示原始值",
-	"raw_help": "额外创建网关报告的所有值（“raw”文件夹）。仅用于故障排查。"
+	"raw_help": "额外创建网关报告的所有值（“raw”文件夹）。仅用于故障排查。",
+	"header_support": "支持开发",
+	"support_text": "该适配器免费提供。如果它对您有帮助，您可以自愿支持其开发。",
+	"link_sponsor": "GitHub Sponsors",
+	"link_paypal": "通过 PayPal 捐赠"
 }

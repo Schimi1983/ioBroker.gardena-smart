@@ -44,3 +44,12 @@ setState(`${valve}.open`, true); // schließt nach 10 Minuten automatisch
 ## Fragen und Probleme
 
 Bitte ein Issue auf [GitHub](https://github.com/Schimi1983/ioBroker.gardena-smart/issues) anlegen. Stelle dazu die Protokollstufe der Instanz auf `debug` und hänge das Log an.
+
+## Unterstützen
+
+Der Adapter ist kostenlos und bleibt es. Wenn er dir nützt und du Danke sagen möchtest, kannst du die Entwicklung unterstützen:
+
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Schimi1983-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Schimi1983)
+[![PayPal](https://img.shields.io/badge/PayPal-Spenden-00457C?logo=paypal&logoColor=white)](https://paypal.me/Schimi1983)
+
+Fehlermeldungen und Ideen in den [Issues](https://github.com/Schimi1983/ioBroker.gardena-smart/issues) helfen genauso.

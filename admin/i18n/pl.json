@@ -9,5 +9,9 @@
 	"Port": "Port",
 	"port_help": "Zmieniaj tylko w razie potrzeby (domyślnie 8443)",
 	"Show raw values": "Pokaż surowe wartości",
-	"raw_help": "Dodatkowo tworzy wszystkie wartości bramki (folder „raw”). Potrzebne tylko do diagnostyki."
+	"raw_help": "Dodatkowo tworzy wszystkie wartości bramki (folder „raw”). Potrzebne tylko do diagnostyki.",
+	"header_support": "Wesprzyj rozwój",
+	"support_text": "Adapter jest darmowy. Jeśli jest dla Ciebie przydatny, możesz dobrowolnie wesprzeć jego rozwój.",
+	"link_sponsor": "GitHub Sponsors",
+	"link_paypal": "Wpłać przez PayPal"
 }

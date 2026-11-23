@@ -9,5 +9,9 @@
 	"Port": "Poort",
 	"port_help": "Alleen wijzigen indien nodig (standaard 8443)",
 	"Show raw values": "Ruwe waarden tonen",
-	"raw_help": "Maakt extra alle waarden van de gateway aan (map \"raw\"). Alleen nodig voor foutopsporing."
+	"raw_help": "Maakt extra alle waarden van de gateway aan (map \"raw\"). Alleen nodig voor foutopsporing.",
+	"header_support": "Ontwikkeling steunen",
+	"support_text": "De adapter is gratis. Als hij nuttig voor je is, kun je de ontwikkeling vrijwillig steunen.",
+	"link_sponsor": "GitHub Sponsors",
+	"link_paypal": "Doneren via PayPal"
 }

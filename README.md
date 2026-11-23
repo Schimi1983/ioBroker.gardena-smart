@@ -78,6 +78,15 @@ setState(`${valve}.open`, true); // closes automatically after 10 minutes
 
 Please open an issue on [GitHub](https://github.com/Schimi1983/ioBroker.gardena-smart/issues). Set the log level of the instance to `debug` and add the log.
 
+## Support
+
+The adapter is free and stays free. If it is useful to you and you want to say thanks, you can support the development:
+
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-Schimi1983-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Schimi1983)
+[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?logo=paypal&logoColor=white)](https://paypal.me/Schimi1983)
+
+Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.gardena-smart/issues) help just as much.
+
 ## Technical background
 
 - Connection: secure WebSocket to the gateway on port 8443 (local API, provided by GARDENA)
@@ -94,6 +103,7 @@ Please open an issue on [GitHub](https://github.com/Schimi1983/ioBroker.gardena-
 ### **WORK IN PROGRESS**
 
 - (Schimi1983) Initial release: local connection to the GARDENA smart Gateway
+- (Schimi1983) Support links (GitHub Sponsors, PayPal) in the README, in `package.json` (`npm fund`) and at the bottom of the settings page
 
 ## License
 

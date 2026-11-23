@@ -9,5 +9,9 @@
 	"Port": "Porta",
 	"port_help": "Modificare solo se necessario (predefinito 8443)",
 	"Show raw values": "Mostra valori grezzi",
-	"raw_help": "Crea in aggiunta tutti i valori del gateway (cartella \"raw\"). Serve solo per la diagnosi."
+	"raw_help": "Crea in aggiunta tutti i valori del gateway (cartella \"raw\"). Serve solo per la diagnosi.",
+	"header_support": "Sostieni lo sviluppo",
+	"support_text": "L'adattatore è gratuito. Se ti è utile, puoi sostenerne lo sviluppo su base volontaria.",
+	"link_sponsor": "GitHub Sponsors",
+	"link_paypal": "Dona con PayPal"
 }

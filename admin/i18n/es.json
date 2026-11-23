@@ -9,5 +9,9 @@
 	"Port": "Puerto",
 	"port_help": "Cambiar solo si es necesario (predeterminado 8443)",
 	"Show raw values": "Mostrar valores en bruto",
-	"raw_help": "Crea además todos los valores del gateway (carpeta \"raw\"). Solo necesario para diagnóstico."
+	"raw_help": "Crea además todos los valores del gateway (carpeta \"raw\"). Solo necesario para diagnóstico.",
+	"header_support": "Apoyar el desarrollo",
+	"support_text": "El adaptador es gratuito. Si te resulta útil, puedes apoyar su desarrollo de forma voluntaria.",
+	"link_sponsor": "GitHub Sponsors",
+	"link_paypal": "Donar con PayPal"
 }

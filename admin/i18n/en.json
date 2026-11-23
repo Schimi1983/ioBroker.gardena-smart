@@ -9,5 +9,9 @@
 	"Port": "Port",
 	"port_help": "Only change if necessary (default 8443)",
 	"Show raw values": "Show raw values",
-	"raw_help": "Additionally creates all values the gateway reports (folder \"raw\"). Only needed for troubleshooting."
+	"raw_help": "Additionally creates all values the gateway reports (folder \"raw\"). Only needed for troubleshooting.",
+	"header_support": "Support the development",
+	"support_text": "The adapter is free. If it is useful to you, you can support its development voluntarily.",
+	"link_sponsor": "GitHub Sponsors",
+	"link_paypal": "Donate via PayPal"
 }

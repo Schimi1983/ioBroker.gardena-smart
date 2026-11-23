@@ -9,5 +9,9 @@
 	"Port": "Port",
 	"port_help": "Ne modifier qu'en cas de besoin (par défaut 8443)",
 	"Show raw values": "Afficher les valeurs brutes",
-	"raw_help": "Crée en plus toutes les valeurs de la passerelle (dossier « raw »). Uniquement utile pour le dépannage."
+	"raw_help": "Crée en plus toutes les valeurs de la passerelle (dossier « raw »). Uniquement utile pour le dépannage.",
+	"header_support": "Soutenir le développement",
+	"support_text": "L'adaptateur est gratuit. S'il vous est utile, vous pouvez soutenir son développement de manière volontaire.",
+	"link_sponsor": "GitHub Sponsors",
+	"link_paypal": "Faire un don via PayPal"
 }
