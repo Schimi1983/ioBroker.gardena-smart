@@ -28,13 +28,13 @@ export interface Logger {
 /** Timer functions, injected so the adapter's own timers are used (cleared on unload). */
 export interface Timers {
 	/** Starts a timeout */
-	setTimeout(cb: () => void, ms: number): unknown;
+	startTimeout(cb: () => void, ms: number): unknown;
 	/** Stops a timeout */
-	clearTimeout(handle: unknown): void;
+	stopTimeout(handle: unknown): void;
 	/** Starts an interval */
-	setInterval(cb: () => void, ms: number): unknown;
+	startInterval(cb: () => void, ms: number): unknown;
 	/** Stops an interval */
-	clearInterval(handle: unknown): void;
+	stopInterval(handle: unknown): void;
 }
 
 /** Options of the gateway client. */
@@ -188,7 +188,7 @@ export class GatewayClient extends EventEmitter {
 	/** Closes the connection and stops reconnecting. Pending requests fail. */
 	public stop(): void {
 		this.stopped = true;
-		this.options.timers.clearTimeout(this.reconnectTimer);
+		this.options.timers.stopTimeout(this.reconnectTimer);
 		this.closeSocket();
 	}
 
@@ -210,7 +210,7 @@ export class GatewayClient extends EventEmitter {
 		const promises = full.map(
 			r =>
 				new Promise<GatewayReply>((resolve, reject) => {
-					const timer = this.options.timers.setTimeout(() => {
+					const timer = this.options.timers.startTimeout(() => {
 						this.pending.delete(r.request_id);
 						reject(new Error(`Gateway did not answer within ${timeout / 1000} s`));
 					}, timeout);
@@ -392,15 +392,15 @@ export class GatewayClient extends EventEmitter {
 		if (this.stopped) {
 			return;
 		}
-		this.options.timers.clearTimeout(this.reconnectTimer);
+		this.options.timers.stopTimeout(this.reconnectTimer);
 		const delay = this.reconnectDelay;
 		this.reconnectDelay = Math.min(this.reconnectDelay * 2, Math.max(RECONNECT_MAX, delay));
-		this.reconnectTimer = this.options.timers.setTimeout(() => void this.connect(), delay);
+		this.reconnectTimer = this.options.timers.startTimeout(() => void this.connect(), delay);
 	}
 
 	private startPing(ws: WebSocket): void {
 		this.stopPing();
-		this.pingTimer = this.options.timers.setInterval(() => {
+		this.pingTimer = this.options.timers.startInterval(() => {
 			if (!this.alive) {
 				this.options.log.warn('Gateway does not answer anymore, reconnecting');
 				ws.terminate();
@@ -412,7 +412,7 @@ export class GatewayClient extends EventEmitter {
 	}
 
 	private stopPing(): void {
-		this.options.timers.clearInterval(this.pingTimer);
+		this.options.timers.stopInterval(this.pingTimer);
 		this.pingTimer = undefined;
 	}
 
@@ -430,7 +430,7 @@ export class GatewayClient extends EventEmitter {
 
 	private failPending(err: Error): void {
 		for (const [id, p] of this.pending) {
-			this.options.timers.clearTimeout(p.timer);
+			this.options.timers.stopTimeout(p.timer);
 			p.reject(err);
 			this.pending.delete(id);
 		}
@@ -441,7 +441,7 @@ export class GatewayClient extends EventEmitter {
 			if (isReply(msg)) {
 				const p = this.pending.get(msg.request_id);
 				if (p) {
-					this.options.timers.clearTimeout(p.timer);
+					this.options.timers.stopTimeout(p.timer);
 					this.pending.delete(msg.request_id);
 					p.resolve(msg);
 				}

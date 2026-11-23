@@ -95,10 +95,10 @@ class GardenaSmart extends utils.Adapter {
       const stored = await this.getStateAsync("info.certificate");
       const certificatePem = typeof (stored == null ? void 0 : stored.val) === "string" && stored.val.includes("BEGIN CERTIFICATE") ? stored.val : void 0;
       const timers = {
-        setTimeout: (cb, ms) => this.setTimeout(cb, ms),
-        clearTimeout: (h) => this.clearTimeout(h),
-        setInterval: (cb, ms) => this.setInterval(cb, ms),
-        clearInterval: (h) => this.clearInterval(h)
+        startTimeout: (cb, ms) => this.setTimeout(cb, ms),
+        stopTimeout: (h) => this.clearTimeout(h),
+        startInterval: (cb, ms) => this.setInterval(cb, ms),
+        stopInterval: (h) => this.clearInterval(h)
       };
       const client = new import_gateway_client.GatewayClient({
         host,
@@ -260,8 +260,8 @@ class GardenaSmart extends utils.Adapter {
         this.log.error(`GARDENA cloud: ${err.message}`);
       } else if (err instanceof import_cloud_client.CloudQuotaError) {
         const summary = this.quota.summary();
-        const wait = (_a = err.retryAfterMs) != null ? _a : summary.remaining === 0 && summary.nextRelease ? summary.nextRelease - Date.now() : CLOUD_BLOCK_DEFAULT_MS;
-        this.cloudBlockedUntil = Date.now() + Math.max(wait, 6e4);
+        const waitMs = (_a = err.retryAfterMs) != null ? _a : summary.remaining === 0 && summary.nextRelease ? summary.nextRelease - Date.now() : CLOUD_BLOCK_DEFAULT_MS;
+        this.cloudBlockedUntil = Date.now() + Math.max(waitMs, 6e4);
         await this.setState("cloud.blocked", true, true);
         await this.setState("cloud.blockedUntil", this.cloudBlockedUntil, true);
         this.log.warn(

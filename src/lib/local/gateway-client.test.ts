@@ -19,10 +19,10 @@ const PASSWORD = 'secret';
 
 const silent = { debug: () => undefined, info: () => undefined, warn: () => undefined, error: () => undefined };
 const timers: Timers = {
-	setTimeout: (cb, ms) => setTimeout(cb, ms),
-	clearTimeout: h => clearTimeout(h as NodeJS.Timeout),
-	setInterval: (cb, ms) => setInterval(cb, ms),
-	clearInterval: h => clearInterval(h as NodeJS.Timeout),
+	startTimeout: (cb, ms) => setTimeout(cb, ms),
+	stopTimeout: h => clearTimeout(h as NodeJS.Timeout),
+	startInterval: (cb, ms) => setInterval(cb, ms),
+	stopInterval: h => clearInterval(h as NodeJS.Timeout),
 };
 
 interface MockGateway {

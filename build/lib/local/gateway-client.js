@@ -125,7 +125,7 @@ class GatewayClient extends import_node_events.EventEmitter {
   /** Closes the connection and stops reconnecting. Pending requests fail. */
   stop() {
     this.stopped = true;
-    this.options.timers.clearTimeout(this.reconnectTimer);
+    this.options.timers.stopTimeout(this.reconnectTimer);
     this.closeSocket();
   }
   /**
@@ -143,7 +143,7 @@ class GatewayClient extends import_node_events.EventEmitter {
     const full = requests.map((r) => ({ ...r, request_id: (0, import_node_crypto.randomUUID)() }));
     const promises = full.map(
       (r) => new Promise((resolve, reject) => {
-        const timer = this.options.timers.setTimeout(() => {
+        const timer = this.options.timers.startTimeout(() => {
           this.pending.delete(r.request_id);
           reject(new Error(`Gateway did not answer within ${timeout / 1e3} s`));
         }, timeout);
@@ -306,14 +306,14 @@ class GatewayClient extends import_node_events.EventEmitter {
     if (this.stopped) {
       return;
     }
-    this.options.timers.clearTimeout(this.reconnectTimer);
+    this.options.timers.stopTimeout(this.reconnectTimer);
     const delay = this.reconnectDelay;
     this.reconnectDelay = Math.min(this.reconnectDelay * 2, Math.max(RECONNECT_MAX, delay));
-    this.reconnectTimer = this.options.timers.setTimeout(() => void this.connect(), delay);
+    this.reconnectTimer = this.options.timers.startTimeout(() => void this.connect(), delay);
   }
   startPing(ws) {
     this.stopPing();
-    this.pingTimer = this.options.timers.setInterval(() => {
+    this.pingTimer = this.options.timers.startInterval(() => {
       if (!this.alive) {
         this.options.log.warn("Gateway does not answer anymore, reconnecting");
         ws.terminate();
@@ -324,7 +324,7 @@ class GatewayClient extends import_node_events.EventEmitter {
     }, PING_INTERVAL);
   }
   stopPing() {
-    this.options.timers.clearInterval(this.pingTimer);
+    this.options.timers.stopInterval(this.pingTimer);
     this.pingTimer = void 0;
   }
   closeSocket() {
@@ -340,7 +340,7 @@ class GatewayClient extends import_node_events.EventEmitter {
   }
   failPending(err) {
     for (const [id, p] of this.pending) {
-      this.options.timers.clearTimeout(p.timer);
+      this.options.timers.stopTimeout(p.timer);
       p.reject(err);
       this.pending.delete(id);
     }
@@ -350,7 +350,7 @@ class GatewayClient extends import_node_events.EventEmitter {
       if ((0, import_protocol.isReply)(msg)) {
         const p = this.pending.get(msg.request_id);
         if (p) {
-          this.options.timers.clearTimeout(p.timer);
+          this.options.timers.stopTimeout(p.timer);
           this.pending.delete(msg.request_id);
           p.resolve(msg);
         }
