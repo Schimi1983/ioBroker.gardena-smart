@@ -20,14 +20,14 @@ dein Passwort kann also nirgendwo anders landen. Hast du das Gateway zurückgese
 
 ## Unterstützte Geräte
 
-| Gerät | Was geht | Getestet |
-| --- | --- | --- |
-| smart Water Control | Ventil auf/zu, Bewässerungsdauer, Ende der Bewässerung, Tastendauer, Zeitpläne, Batterie, Temperatur | ✅ 1. Gen. · ❔ 2. Gen. |
-| smart Sensor / Sensor II | Bodenfeuchte, Bodentemperatur, Licht und Lufttemperatur (Sensor I), sofort messen | ✅ Sensor II |
-| smart Irrigation Control | jedes Ventil auf/zu, alle Ventile schließen | ❔ |
-| smart Zwischenstecker (Power Adapter) | einschalten (für eine Zeit) / aus | ❔ |
-| smart SILENO Mähroboter | Status, Start für eine Zeit, Parken bis zum nächsten Zeitplan / bis auf Weiteres, Pause (2. Gen.) | ❔ |
-| smart Haus- & Gartenautomat (Pumpe) | an/aus, Druck, Durchfluss, Temperatur, Betriebsart | ❔ |
+| Gerät                                 | Was geht                                                                                             | Getestet                |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------- |
+| smart Water Control                   | Ventil auf/zu, Bewässerungsdauer, Ende der Bewässerung, Tastendauer, Zeitpläne, Batterie, Temperatur | ✅ 1. Gen. · ❔ 2. Gen. |
+| smart Sensor / Sensor II              | Bodenfeuchte, Bodentemperatur, Licht und Lufttemperatur (Sensor I), sofort messen                    | ✅ Sensor II            |
+| smart Irrigation Control              | jedes Ventil auf/zu, alle Ventile schließen                                                          | ❔                      |
+| smart Zwischenstecker (Power Adapter) | einschalten (für eine Zeit) / aus                                                                    | ❔                      |
+| smart SILENO Mähroboter               | Status, Start für eine Zeit, Parken bis zum nächsten Zeitplan / bis auf Weiteres, Pause (2. Gen.)    | ❔                      |
+| smart Haus- & Gartenautomat (Pumpe)   | an/aus, Druck, Durchfluss, Temperatur, Betriebsart                                                   | ❔                      |
 
 ✅ an echter Hardware getestet · ❔ umgesetzt, noch nicht getestet – bitte gib Bescheid, wie es bei dir läuft.
 
@@ -39,22 +39,22 @@ alles, was das Gateway meldet – bitte hänge diese Werte an, wenn du ein Issue
 Jedes Gerät erscheint als `gardena-smart.0.devices.<Geräte-ID>`. Du kannst es in ioBroker umbenennen – oder der Adapter übernimmt die Namen
 aus der GARDENA App (siehe unten).
 
-| Datenpunkt | Bedeutung |
-| --- | --- |
-| `info.online` | Gerät ist erreichbar |
-| `info.battery` / `info.signal` | Batteriestand / Funksignal in % |
-| `info.frostWarning` | `true`, wenn es fast friert – dann besser nicht bewässern |
-| `info.identify` | Drücken, damit die LED des Geräts blinkt |
-| `valve1.open` | `true` = Ventil auf, `false` = Ventil zu. Zeigt auch den aktuellen Zustand |
-| `valve1.duration` | Wie lange das Ventil offen bleibt, wenn du `open` auf `true` setzt (Minuten) |
-| `valve1.active` / `valve1.source` | Bewässerung läuft / wer sie gestartet hat: `manual` (Adapter, App oder Taste), `schedule` oder `off` |
-| `valve1.endTime` | Wann die Bewässerung endet (Zeitstempel, 0 = läuft nicht) – praktisch für „läuft noch 7 min“ |
-| `valve1.buttonTime` | Bewässerungsdauer bei Tastendruck am Gerät (Minuten) |
-| `valve1.schedules` | Zeitpläne im Gerät (Start, Ende, Minuten, Wochentage) als JSON – siehe Hinweis unten |
-| `valve1.schedulePaused` / `valve1.pausedUntil` | Zeitpläne angehalten / bis wann |
-| `sensor.soilMoisture` / `sensor.soilTemperature` | Bodenfeuchte in % / Bodentemperatur in °C |
-| `sensor.measure` | Drücken, um sofort zu messen |
-| `power.on`, `pump.on`, `mower.start` … | Gerät für die Zeit im passenden `duration` einschalten bzw. starten |
+| Datenpunkt                                       | Bedeutung                                                                                            |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `info.online`                                    | Gerät ist erreichbar                                                                                 |
+| `info.battery` / `info.signal`                   | Batteriestand / Funksignal in %                                                                      |
+| `info.frostWarning`                              | `true`, wenn es fast friert – dann besser nicht bewässern                                            |
+| `info.identify`                                  | Drücken, damit die LED des Geräts blinkt                                                             |
+| `valve1.open`                                    | `true` = Ventil auf, `false` = Ventil zu. Zeigt auch den aktuellen Zustand                           |
+| `valve1.duration`                                | Wie lange das Ventil offen bleibt, wenn du `open` auf `true` setzt (Minuten)                         |
+| `valve1.active` / `valve1.source`                | Bewässerung läuft / wer sie gestartet hat: `manual` (Adapter, App oder Taste), `schedule` oder `off` |
+| `valve1.endTime`                                 | Wann die Bewässerung endet (Zeitstempel, 0 = läuft nicht) – praktisch für „läuft noch 7 min“         |
+| `valve1.buttonTime`                              | Bewässerungsdauer bei Tastendruck am Gerät (Minuten)                                                 |
+| `valve1.schedules`                               | Zeitpläne im Gerät (Start, Ende, Minuten, Wochentage) als JSON – siehe Hinweis unten                 |
+| `valve1.schedulePaused` / `valve1.pausedUntil`   | Zeitpläne angehalten / bis wann                                                                      |
+| `sensor.soilMoisture` / `sensor.soilTemperature` | Bodenfeuchte in % / Bodentemperatur in °C                                                            |
+| `sensor.measure`                                 | Drücken, um sofort zu messen                                                                         |
+| `power.on`, `pump.on`, `mower.start` …           | Gerät für die Zeit im passenden `duration` einschalten bzw. starten                                  |
 
 **Zeitpläne:** Bitte in der GARDENA App anlegen, ändern oder pausieren. Die App bekommt Änderungen direkt am Gerät nicht mit.
 Im „GARDENA-unterstützten Modus“ verschiebt die Cloud Startzeiten und Dauer – `valve1.schedules` zeigt, wann das Gerät wirklich bewässert.
@@ -73,7 +73,7 @@ Die lokale Verbindung kennt die Namen nicht, die du deinen Geräten in der GARDE
 
 1. Im [Husqvarna Developer Portal](https://developer.husqvarnagroup.cloud/) mit deinem GARDENA-Konto anmelden.
 2. Eine neue Anwendung anlegen und **Authentication API** sowie **GARDENA smart system API** verbinden.
-3. **Application Key** und **Application Secret** in die Adapter-Einstellungen kopieren (Abschnitt *GARDENA-Cloud*).
+3. **Application Key** und **Application Secret** in die Adapter-Einstellungen kopieren (Abschnitt _GARDENA-Cloud_).
 
 Der Adapter liest die Namen etwa einmal am Tag (2 Abfragen). GARDENA erlaubt 1000 Abfragen pro Woche und Key – der Adapter zählt
 seine Abfragen unter `cloud.quota.*` und bremst lange vor dem Limit von selbst. Namen, die du in ioBroker selbst geändert hast, bleiben erhalten.

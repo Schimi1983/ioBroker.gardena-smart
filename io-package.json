@@ -1,453 +1,441 @@
 {
-  "common": {
-    "name": "gardena-smart",
-    "version": "0.0.1",
-    "news": {
-      "0.0.1": {
-        "en": "Initial release: local connection to the GARDENA smart Gateway",
-        "de": "Erste Version: lokale Verbindung zum GARDENA smart Gateway",
-        "ru": "Первая версия: локальное подключение к GARDENA smart Gateway",
-        "pt": "Primeira versão: ligação local ao GARDENA smart Gateway",
-        "nl": "Eerste versie: lokale verbinding met de GARDENA smart Gateway",
-        "fr": "Première version : connexion locale à la GARDENA smart Gateway",
-        "it": "Prima versione: connessione locale al GARDENA smart Gateway",
-        "es": "Primera versión: conexión local al GARDENA smart Gateway",
-        "pl": "Pierwsza wersja: lokalne połączenie z GARDENA smart Gateway",
-        "uk": "Перша версія: локальне підключення до GARDENA smart Gateway",
-        "zh-cn": "首个版本：本地连接 GARDENA smart Gateway"
-      }
-    },
-    "titleLang": {
-      "en": "GARDENA smart system",
-      "de": "GARDENA smart system",
-      "ru": "GARDENA smart system",
-      "pt": "GARDENA smart system",
-      "nl": "GARDENA smart system",
-      "fr": "GARDENA smart system",
-      "it": "GARDENA smart system",
-      "es": "GARDENA smart system",
-      "pl": "GARDENA smart system",
-      "uk": "GARDENA smart system",
-      "zh-cn": "GARDENA smart system"
-    },
-    "desc": {
-      "en": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-      "de": "GARDENA smart system Geräte lokal über das smart Gateway steuern und überwachen (ohne Cloud)",
-      "ru": "Локальное управление устройствами GARDENA smart system через smart Gateway (без облака)",
-      "pt": "Controle e monitore dispositivos GARDENA smart system localmente através do smart Gateway (sem nuvem)",
-      "nl": "GARDENA smart system-apparaten lokaal bedienen en bewaken via de smart Gateway (zonder cloud)",
-      "fr": "Contrôler et surveiller localement les appareils GARDENA smart system via la smart Gateway (sans cloud)",
-      "it": "Controlla e monitora localmente i dispositivi GARDENA smart system tramite lo smart Gateway (senza cloud)",
-      "es": "Controle y supervise localmente los dispositivos GARDENA smart system a través del smart Gateway (sin nube)",
-      "pl": "Lokalne sterowanie i monitorowanie urządzeń GARDENA smart system przez smart Gateway (bez chmury)",
-      "uk": "Локальне керування пристроями GARDENA smart system через smart Gateway (без хмари)",
-      "zh-cn": "通过 smart Gateway 在本地控制和监控 GARDENA smart system 设备（无需云）"
-    },
-    "authors": [
-      "Schimi <github@world-mg.de>"
-    ],
-    "keywords": [
-      "gardena",
-      "smart system",
-      "irrigation",
-      "water control",
-      "sensor",
-      "garden",
-      "mower",
-      "sileno",
-      "pump",
-      "local"
-    ],
-    "licenseInformation": {
-      "type": "free",
-      "license": "MIT"
-    },
-    "platform": "Javascript/Node.js",
-    "icon": "gardena-smart.png",
-    "enabled": true,
-    "extIcon": "https://raw.githubusercontent.com/Schimi1983/ioBroker.gardena-smart/main/admin/gardena-smart.png",
-    "readme": "https://github.com/Schimi1983/ioBroker.gardena-smart/blob/main/README.md",
-    "loglevel": "info",
-    "tier": 3,
-    "mode": "daemon",
-    "type": "garden",
-    "compact": true,
-    "connectionType": "local",
-    "dataSource": "push",
-    "adminUI": {
-      "config": "json"
-    },
-    "dependencies": [
-      {
-        "js-controller": ">=6.0.11"
-      }
-    ],
-    "globalDependencies": [
-      {
-        "admin": ">=7.6.20"
-      }
-    ],
-    "docs": {
-      "en": [
-        "README.md"
-      ],
-      "de": [
-        "docs/de/README.md"
-      ]
-    }
-  },
-  "native": {
-    "host": "",
-    "port": 8443,
-    "password": "",
-    "appKey": "",
-    "appSecret": "",
-    "cloudLimit": 1000,
-    "rawStates": false
-  },
-  "objects": [],
-  "instanceObjects": [
-    {
-      "_id": "info",
-      "type": "channel",
-      "common": {
-        "name": {
-          "en": "Information",
-          "de": "Informationen"
-        }
-      },
-      "native": {}
-    },
-    {
-      "_id": "info.connection",
-      "type": "state",
-      "common": {
-        "role": "indicator.connected",
-        "name": {
-          "en": "Connected to the GARDENA smart Gateway",
-          "de": "Mit dem GARDENA smart Gateway verbunden"
-        },
-        "type": "boolean",
-        "read": true,
-        "write": false,
-        "def": false
-      },
-      "native": {}
-    },
-    {
-      "_id": "info.gateway",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Gateway name",
-          "de": "Name des Gateways"
-        },
-        "type": "string",
-        "role": "text",
-        "read": true,
-        "write": false,
-        "def": ""
-      },
-      "native": {}
-    },
-    {
-      "_id": "info.devices",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Number of devices",
-          "de": "Anzahl Geräte"
-        },
-        "type": "number",
-        "role": "value",
-        "read": true,
-        "write": false,
-        "def": 0
-      },
-      "native": {}
-    },
-    {
-      "_id": "info.certificateFingerprint",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Trusted gateway certificate (SHA-256)",
-          "de": "Vertrautes Gateway-Zertifikat (SHA-256)"
-        },
-        "type": "string",
-        "role": "text",
-        "read": true,
-        "write": false,
-        "def": ""
-      },
-      "native": {}
-    },
-    {
-      "_id": "info.certificate",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Trusted gateway certificate (PEM)",
-          "de": "Vertrautes Gateway-Zertifikat (PEM)"
-        },
-        "type": "string",
-        "role": "text",
-        "read": true,
-        "write": false,
-        "def": ""
-      },
-      "native": {}
-    },
-    {
-      "_id": "info.trustNewCertificate",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Trust new gateway certificate (after gateway reset)",
-          "de": "Neues Gateway-Zertifikat vertrauen (nach Gateway-Reset)"
-        },
-        "type": "boolean",
-        "role": "button",
-        "read": false,
-        "write": true
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud",
-      "type": "channel",
-      "common": {
-        "name": {
-          "en": "GARDENA cloud (optional)",
-          "de": "GARDENA-Cloud (optional)"
-        }
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.connection",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Last cloud request successful",
-          "de": "Letzte Cloud-Abfrage erfolgreich"
-        },
-        "read": true,
-        "write": false,
-        "type": "boolean",
-        "role": "indicator.reachable",
-        "def": false
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.lastUpdate",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Last successful cloud request",
-          "de": "Letzte erfolgreiche Cloud-Abfrage"
-        },
-        "read": true,
-        "write": false,
-        "type": "number",
-        "role": "value.time"
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.devices",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Local devices when the names were last read",
-          "de": "Lokale Geräte beim letzten Lesen der Namen"
-        },
-        "type": "number",
-        "role": "value",
-        "read": true,
-        "write": false
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.refresh",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Read names from the cloud now (uses 2 requests)",
-          "de": "Namen jetzt aus der Cloud lesen (verbraucht 2 Abfragen)"
-        },
-        "read": false,
-        "write": true,
-        "type": "boolean",
-        "role": "button"
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.blocked",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Cloud paused (too many requests)",
-          "de": "Cloud pausiert (zu viele Abfragen)"
-        },
-        "read": true,
-        "write": false,
-        "type": "boolean",
-        "role": "indicator.alarm",
-        "def": false
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.blockedUntil",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Cloud paused until",
-          "de": "Cloud pausiert bis"
-        },
-        "read": true,
-        "write": false,
-        "type": "number",
-        "role": "value.time"
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.quota",
-      "type": "channel",
-      "common": {
-        "name": {
-          "en": "Cloud requests (last 7 days)",
-          "de": "Cloud-Abfragen (letzte 7 Tage)"
-        }
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.quota.used",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Requests used in the last 7 days",
-          "de": "Verbrauchte Abfragen (7 Tage)"
-        },
-        "read": true,
-        "write": false,
-        "type": "number",
-        "role": "value",
-        "def": 0
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.quota.limit",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Weekly limit",
-          "de": "Wochenlimit"
-        },
-        "read": true,
-        "write": false,
-        "type": "number",
-        "role": "value",
-        "def": 1000
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.quota.remaining",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Requests left",
-          "de": "Verbleibende Abfragen"
-        },
-        "read": true,
-        "write": false,
-        "type": "number",
-        "role": "value",
-        "def": 1000
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.quota.percent",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Used share of the weekly limit",
-          "de": "Anteil am Wochenlimit"
-        },
-        "read": true,
-        "write": false,
-        "type": "number",
-        "role": "value",
-        "unit": "%",
-        "min": 0,
-        "max": 100,
-        "def": 0
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.quota.warning",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "80 % of the weekly limit used",
-          "de": "80 % des Wochenlimits verbraucht"
-        },
-        "read": true,
-        "write": false,
-        "type": "boolean",
-        "role": "indicator.alarm",
-        "def": false
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.quota.reset",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Reset counter (e.g. after creating a new App Key)",
-          "de": "Zähler zurücksetzen (z. B. nach neuem App-Key)"
-        },
-        "read": false,
-        "write": true,
-        "type": "boolean",
-        "role": "button"
-      },
-      "native": {}
-    },
-    {
-      "_id": "cloud.quota.log",
-      "type": "state",
-      "common": {
-        "name": {
-          "en": "Times of the counted requests (internal)",
-          "de": "Zeitpunkte der gezählten Abfragen (intern)"
-        },
-        "read": true,
-        "write": false,
-        "type": "string",
-        "role": "json",
-        "def": "[]"
-      },
-      "native": {}
-    }
-  ],
-  "encryptedNative": [
-    "password",
-    "appSecret"
-  ],
-  "protectedNative": [
-    "password",
-    "appSecret"
-  ]
+	"common": {
+		"name": "gardena-smart",
+		"version": "0.0.1",
+		"news": {
+			"0.0.1": {
+				"en": "Initial release: local connection to the GARDENA smart Gateway",
+				"de": "Erste Version: lokale Verbindung zum GARDENA smart Gateway",
+				"ru": "Первая версия: локальное подключение к GARDENA smart Gateway",
+				"pt": "Primeira versão: ligação local ao GARDENA smart Gateway",
+				"nl": "Eerste versie: lokale verbinding met de GARDENA smart Gateway",
+				"fr": "Première version : connexion locale à la GARDENA smart Gateway",
+				"it": "Prima versione: connessione locale al GARDENA smart Gateway",
+				"es": "Primera versión: conexión local al GARDENA smart Gateway",
+				"pl": "Pierwsza wersja: lokalne połączenie z GARDENA smart Gateway",
+				"uk": "Перша версія: локальне підключення до GARDENA smart Gateway",
+				"zh-cn": "首个版本：本地连接 GARDENA smart Gateway"
+			}
+		},
+		"titleLang": {
+			"en": "GARDENA smart system",
+			"de": "GARDENA smart system",
+			"ru": "GARDENA smart system",
+			"pt": "GARDENA smart system",
+			"nl": "GARDENA smart system",
+			"fr": "GARDENA smart system",
+			"it": "GARDENA smart system",
+			"es": "GARDENA smart system",
+			"pl": "GARDENA smart system",
+			"uk": "GARDENA smart system",
+			"zh-cn": "GARDENA smart system"
+		},
+		"desc": {
+			"en": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
+			"de": "GARDENA smart system Geräte lokal über das smart Gateway steuern und überwachen (ohne Cloud)",
+			"ru": "Локальное управление устройствами GARDENA smart system через smart Gateway (без облака)",
+			"pt": "Controle e monitore dispositivos GARDENA smart system localmente através do smart Gateway (sem nuvem)",
+			"nl": "GARDENA smart system-apparaten lokaal bedienen en bewaken via de smart Gateway (zonder cloud)",
+			"fr": "Contrôler et surveiller localement les appareils GARDENA smart system via la smart Gateway (sans cloud)",
+			"it": "Controlla e monitora localmente i dispositivi GARDENA smart system tramite lo smart Gateway (senza cloud)",
+			"es": "Controle y supervise localmente los dispositivos GARDENA smart system a través del smart Gateway (sin nube)",
+			"pl": "Lokalne sterowanie i monitorowanie urządzeń GARDENA smart system przez smart Gateway (bez chmury)",
+			"uk": "Локальне керування пристроями GARDENA smart system через smart Gateway (без хмари)",
+			"zh-cn": "通过 smart Gateway 在本地控制和监控 GARDENA smart system 设备（无需云）"
+		},
+		"authors": ["Schimi <github@world-mg.de>"],
+		"keywords": [
+			"gardena",
+			"smart system",
+			"irrigation",
+			"water control",
+			"sensor",
+			"garden",
+			"mower",
+			"sileno",
+			"pump",
+			"local"
+		],
+		"licenseInformation": {
+			"type": "free",
+			"license": "MIT"
+		},
+		"platform": "Javascript/Node.js",
+		"icon": "gardena-smart.png",
+		"enabled": true,
+		"extIcon": "https://raw.githubusercontent.com/Schimi1983/ioBroker.gardena-smart/main/admin/gardena-smart.png",
+		"readme": "https://github.com/Schimi1983/ioBroker.gardena-smart/blob/main/README.md",
+		"loglevel": "info",
+		"tier": 3,
+		"mode": "daemon",
+		"type": "garden",
+		"compact": true,
+		"connectionType": "local",
+		"dataSource": "push",
+		"adminUI": {
+			"config": "json"
+		},
+		"dependencies": [
+			{
+				"js-controller": ">=6.0.11"
+			}
+		],
+		"globalDependencies": [
+			{
+				"admin": ">=7.6.20"
+			}
+		],
+		"docs": {
+			"en": ["README.md"],
+			"de": ["docs/de/README.md"]
+		}
+	},
+	"native": {
+		"host": "",
+		"port": 8443,
+		"password": "",
+		"appKey": "",
+		"appSecret": "",
+		"cloudLimit": 1000,
+		"rawStates": false
+	},
+	"objects": [],
+	"instanceObjects": [
+		{
+			"_id": "info",
+			"type": "channel",
+			"common": {
+				"name": {
+					"en": "Information",
+					"de": "Informationen"
+				}
+			},
+			"native": {}
+		},
+		{
+			"_id": "info.connection",
+			"type": "state",
+			"common": {
+				"role": "indicator.connected",
+				"name": {
+					"en": "Connected to the GARDENA smart Gateway",
+					"de": "Mit dem GARDENA smart Gateway verbunden"
+				},
+				"type": "boolean",
+				"read": true,
+				"write": false,
+				"def": false
+			},
+			"native": {}
+		},
+		{
+			"_id": "info.gateway",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Gateway name",
+					"de": "Name des Gateways"
+				},
+				"type": "string",
+				"role": "text",
+				"read": true,
+				"write": false,
+				"def": ""
+			},
+			"native": {}
+		},
+		{
+			"_id": "info.devices",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Number of devices",
+					"de": "Anzahl Geräte"
+				},
+				"type": "number",
+				"role": "value",
+				"read": true,
+				"write": false,
+				"def": 0
+			},
+			"native": {}
+		},
+		{
+			"_id": "info.certificateFingerprint",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Trusted gateway certificate (SHA-256)",
+					"de": "Vertrautes Gateway-Zertifikat (SHA-256)"
+				},
+				"type": "string",
+				"role": "text",
+				"read": true,
+				"write": false,
+				"def": ""
+			},
+			"native": {}
+		},
+		{
+			"_id": "info.certificate",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Trusted gateway certificate (PEM)",
+					"de": "Vertrautes Gateway-Zertifikat (PEM)"
+				},
+				"type": "string",
+				"role": "text",
+				"read": true,
+				"write": false,
+				"def": ""
+			},
+			"native": {}
+		},
+		{
+			"_id": "info.trustNewCertificate",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Trust new gateway certificate (after gateway reset)",
+					"de": "Neues Gateway-Zertifikat vertrauen (nach Gateway-Reset)"
+				},
+				"type": "boolean",
+				"role": "button",
+				"read": false,
+				"write": true
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud",
+			"type": "channel",
+			"common": {
+				"name": {
+					"en": "GARDENA cloud (optional)",
+					"de": "GARDENA-Cloud (optional)"
+				}
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.connection",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Last cloud request successful",
+					"de": "Letzte Cloud-Abfrage erfolgreich"
+				},
+				"read": true,
+				"write": false,
+				"type": "boolean",
+				"role": "indicator.reachable",
+				"def": false
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.lastUpdate",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Last successful cloud request",
+					"de": "Letzte erfolgreiche Cloud-Abfrage"
+				},
+				"read": true,
+				"write": false,
+				"type": "number",
+				"role": "value.time"
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.devices",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Local devices when the names were last read",
+					"de": "Lokale Geräte beim letzten Lesen der Namen"
+				},
+				"type": "number",
+				"role": "value",
+				"read": true,
+				"write": false
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.refresh",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Read names from the cloud now (uses 2 requests)",
+					"de": "Namen jetzt aus der Cloud lesen (verbraucht 2 Abfragen)"
+				},
+				"read": false,
+				"write": true,
+				"type": "boolean",
+				"role": "button"
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.blocked",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Cloud paused (too many requests)",
+					"de": "Cloud pausiert (zu viele Abfragen)"
+				},
+				"read": true,
+				"write": false,
+				"type": "boolean",
+				"role": "indicator.alarm",
+				"def": false
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.blockedUntil",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Cloud paused until",
+					"de": "Cloud pausiert bis"
+				},
+				"read": true,
+				"write": false,
+				"type": "number",
+				"role": "value.time"
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.quota",
+			"type": "channel",
+			"common": {
+				"name": {
+					"en": "Cloud requests (last 7 days)",
+					"de": "Cloud-Abfragen (letzte 7 Tage)"
+				}
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.quota.used",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Requests used in the last 7 days",
+					"de": "Verbrauchte Abfragen (7 Tage)"
+				},
+				"read": true,
+				"write": false,
+				"type": "number",
+				"role": "value",
+				"def": 0
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.quota.limit",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Weekly limit",
+					"de": "Wochenlimit"
+				},
+				"read": true,
+				"write": false,
+				"type": "number",
+				"role": "value",
+				"def": 1000
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.quota.remaining",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Requests left",
+					"de": "Verbleibende Abfragen"
+				},
+				"read": true,
+				"write": false,
+				"type": "number",
+				"role": "value",
+				"def": 1000
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.quota.percent",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Used share of the weekly limit",
+					"de": "Anteil am Wochenlimit"
+				},
+				"read": true,
+				"write": false,
+				"type": "number",
+				"role": "value",
+				"unit": "%",
+				"min": 0,
+				"max": 100,
+				"def": 0
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.quota.warning",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "80 % of the weekly limit used",
+					"de": "80 % des Wochenlimits verbraucht"
+				},
+				"read": true,
+				"write": false,
+				"type": "boolean",
+				"role": "indicator.alarm",
+				"def": false
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.quota.reset",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Reset counter (e.g. after creating a new App Key)",
+					"de": "Zähler zurücksetzen (z. B. nach neuem App-Key)"
+				},
+				"read": false,
+				"write": true,
+				"type": "boolean",
+				"role": "button"
+			},
+			"native": {}
+		},
+		{
+			"_id": "cloud.quota.log",
+			"type": "state",
+			"common": {
+				"name": {
+					"en": "Times of the counted requests (internal)",
+					"de": "Zeitpunkte der gezählten Abfragen (intern)"
+				},
+				"read": true,
+				"write": false,
+				"type": "string",
+				"role": "json",
+				"def": "[]"
+			},
+			"native": {}
+		}
+	],
+	"encryptedNative": ["password", "appSecret"],
+	"protectedNative": ["password", "appSecret"]
 }

@@ -36,14 +36,14 @@ so your password can't end up somewhere else. If you reset or replace your gatew
 
 ## Supported devices
 
-| Device | What you can do | Tested |
-| --- | --- | --- |
-| smart Water Control | open/close the valve, watering time, end of the watering, button time, schedules, battery, temperature | ✅ 1st gen. · ❔ 2nd gen. |
-| smart Sensor / Sensor II | soil moisture, soil temperature, light and air temperature (Sensor I), measure now | ✅ Sensor II |
-| smart Irrigation Control | open/close each valve, close all valves | ❔ |
-| smart Power Adapter | switch on (for a time) / off | ❔ |
-| smart SILENO mowers | status, start for a time, park until the next schedule / until further notice, pause (2nd gen.) | ❔ |
-| smart Pressure Pump | on/off, pressure, flow, temperature, operating mode | ❔ |
+| Device                   | What you can do                                                                                        | Tested                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------- |
+| smart Water Control      | open/close the valve, watering time, end of the watering, button time, schedules, battery, temperature | ✅ 1st gen. · ❔ 2nd gen. |
+| smart Sensor / Sensor II | soil moisture, soil temperature, light and air temperature (Sensor I), measure now                     | ✅ Sensor II              |
+| smart Irrigation Control | open/close each valve, close all valves                                                                | ❔                        |
+| smart Power Adapter      | switch on (for a time) / off                                                                           | ❔                        |
+| smart SILENO mowers      | status, start for a time, park until the next schedule / until further notice, pause (2nd gen.)        | ❔                        |
+| smart Pressure Pump      | on/off, pressure, flow, temperature, operating mode                                                    | ❔                        |
 
 ✅ tested on real hardware · ❔ implemented, not yet tested – please report how it works for you.
 
@@ -55,22 +55,22 @@ everything the gateway reports – please attach these values when you open an i
 Each device appears as `gardena-smart.0.devices.<device id>`. You can rename it in ioBroker – or let the adapter take over the names from
 the GARDENA app (see below).
 
-| Data point | Meaning |
-| --- | --- |
-| `info.online` | Device is reachable |
-| `info.battery` / `info.signal` | Battery level / radio signal in % |
-| `info.frostWarning` | `true` if it is close to freezing – better don't water |
-| `info.identify` | Press to let the LED of the device flash |
-| `valve1.open` | `true` = open valve, `false` = close valve. Shows the current state |
-| `valve1.duration` | How long the valve stays open when you set `open` to `true` (minutes) |
-| `valve1.active` / `valve1.source` | Watering is running / who started it: `manual` (adapter, app or button), `schedule` or `off` |
-| `valve1.endTime` | When the watering ends (time stamp, 0 = not watering) – handy for "7 min left" |
-| `valve1.buttonTime` | Watering time when someone presses the button on the device (minutes) |
-| `valve1.schedules` | Schedules stored in the device (start, end, minutes, weekdays) as JSON – see note below |
-| `valve1.schedulePaused` / `valve1.pausedUntil` | Schedules are paused / until when |
-| `sensor.soilMoisture` / `sensor.soilTemperature` | Soil moisture in % / soil temperature in °C |
-| `sensor.measure` | Press to measure now |
-| `power.on`, `pump.on`, `mower.start` … | Switch or start the device for the time in the matching `duration` |
+| Data point                                       | Meaning                                                                                      |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `info.online`                                    | Device is reachable                                                                          |
+| `info.battery` / `info.signal`                   | Battery level / radio signal in %                                                            |
+| `info.frostWarning`                              | `true` if it is close to freezing – better don't water                                       |
+| `info.identify`                                  | Press to let the LED of the device flash                                                     |
+| `valve1.open`                                    | `true` = open valve, `false` = close valve. Shows the current state                          |
+| `valve1.duration`                                | How long the valve stays open when you set `open` to `true` (minutes)                        |
+| `valve1.active` / `valve1.source`                | Watering is running / who started it: `manual` (adapter, app or button), `schedule` or `off` |
+| `valve1.endTime`                                 | When the watering ends (time stamp, 0 = not watering) – handy for "7 min left"               |
+| `valve1.buttonTime`                              | Watering time when someone presses the button on the device (minutes)                        |
+| `valve1.schedules`                               | Schedules stored in the device (start, end, minutes, weekdays) as JSON – see note below      |
+| `valve1.schedulePaused` / `valve1.pausedUntil`   | Schedules are paused / until when                                                            |
+| `sensor.soilMoisture` / `sensor.soilTemperature` | Soil moisture in % / soil temperature in °C                                                  |
+| `sensor.measure`                                 | Press to measure now                                                                         |
+| `power.on`, `pump.on`, `mower.start` …           | Switch or start the device for the time in the matching `duration`                           |
 
 **Schedules:** please create, change or pause schedules in the GARDENA app. The app does not notice changes made directly on the device.
 With "GARDENA assisted mode" the cloud shifts start times and durations – `valve1.schedules` shows the times at which the device really waters.
@@ -89,7 +89,7 @@ The local connection does not know the names you gave your devices in the GARDEN
 
 1. Sign in to the [Husqvarna Developer Portal](https://developer.husqvarnagroup.cloud/) with your GARDENA account.
 2. Create a new application and connect **Authentication API** and **GARDENA smart system API**.
-3. Copy **Application Key** and **Application Secret** into the adapter settings (section *GARDENA cloud*).
+3. Copy **Application Key** and **Application Secret** into the adapter settings (section _GARDENA cloud_).
 
 The adapter reads the names about once a day (2 requests). GARDENA allows 1000 requests per week per key – the adapter counts
 its requests in `cloud.quota.*` and slows down by itself long before the limit. Names you changed yourself in ioBroker are kept.
