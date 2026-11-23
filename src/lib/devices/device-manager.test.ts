@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await -- fakes implement async interfaces */
 import { expect } from 'chai';
 import type { GatewayClient } from '../local/gateway-client';
 import { DeviceManager } from './device-manager';
