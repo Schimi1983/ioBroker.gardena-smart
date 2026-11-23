@@ -19,13 +19,21 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var device_manager_exports = {};
 __export(device_manager_exports, {
   DEVICES_FOLDER: () => DEVICES_FOLDER,
-  DeviceManager: () => DeviceManager
+  DeviceManager: () => DeviceManager,
+  serialFromDeviceId: () => serialFromDeviceId
 });
 module.exports = __toCommonJS(device_manager_exports);
 var import_protocol = require("../local/protocol");
 var import_models = require("./models");
 var import_protocol2 = require("../local/protocol");
 var import_states = require("./states");
+function serialFromDeviceId(id) {
+  if (!/^30[0-9A-Fa-f]{22}$/.test(id)) {
+    return null;
+  }
+  const serial = BigInt(`0x${id}`) & (1n << 38n) - 1n;
+  return serial.toString().padStart(8, "0");
+}
 const DEVICES_FOLDER = "devices";
 const MAX_SECONDS = 36e3;
 class DeviceManager {
@@ -98,17 +106,17 @@ class DeviceManager {
    * @returns number of devices renamed
    */
   async applyNames(namesBySerial) {
-    var _a;
+    var _a, _b, _c;
     let renamed = 0;
     for (const dev of this.devices.values()) {
       const serial = (0, import_protocol2.fieldValue)((0, import_protocol2.getField)(dev.tree, "device", "0", "serial_number"));
-      const name = serial !== null ? namesBySerial.get(String(serial)) : void 0;
+      const name = (_b = serial !== null ? namesBySerial.get(String(serial)) : void 0) != null ? _b : namesBySerial.get((_a = serialFromDeviceId(dev.id)) != null ? _a : "");
       if (!name) {
         continue;
       }
       const id = `${DEVICES_FOLDER}.${dev.id}`;
       const obj = await this.adapter.getObjectAsync(id);
-      const current = (_a = obj == null ? void 0 : obj.common) == null ? void 0 : _a.name;
+      const current = (_c = obj == null ? void 0 : obj.common) == null ? void 0 : _c.name;
       if (current === name) {
         continue;
       }
@@ -394,6 +402,7 @@ class DeviceManager {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   DEVICES_FOLDER,
-  DeviceManager
+  DeviceManager,
+  serialFromDeviceId
 });
 //# sourceMappingURL=device-manager.js.map

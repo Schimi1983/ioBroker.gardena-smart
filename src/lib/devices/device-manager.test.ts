@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/require-await -- fakes implement async interfaces */
 import { expect } from 'chai';
 import type { GatewayClient } from '../local/gateway-client';
-import { DeviceManager } from './device-manager';
+import { DeviceManager, serialFromDeviceId } from './device-manager';
 
 interface Call {
 	op: 'write' | 'execute';
@@ -183,5 +183,13 @@ describe('DeviceManager names from the cloud', () => {
 		expect((await adapter.getObjectAsync('devices.A'))?.common.name).to.equal('Vorgarten');
 		expect((await adapter.getObjectAsync('devices.B'))?.common.name).to.equal('Mein Name');
 		expect(await dm.applyNames(names)).to.equal(0);
+	});
+});
+
+describe('serialFromDeviceId', () => {
+	it('decodes the serial number from the SGTIN-96 device id', () => {
+		expect(serialFromDeviceId('3034F8EE90126D400003C557')).to.equal('00247127');
+		expect(serialFromDeviceId('3034F8EE9012980000057BA5')).to.equal('00359333');
+		expect(serialFromDeviceId('not-an-epc')).to.equal(null);
 	});
 });

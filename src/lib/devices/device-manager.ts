@@ -4,6 +4,22 @@ import { GEN1_COMMAND, GEN2_COMMAND_SOURCE, MODEL_KINDS } from './models';
 import { fieldValue, getField } from '../local/protocol';
 import { type DeviceSnapshot, type StateSpec, buildDevice, buildRawStates, deviceName } from './states';
 
+/**
+ * Serial number encoded in the local device id (fallback when a device reports another serial).
+ *
+ * @param id local device id
+ * @returns serial number or null if the id is no SGTIN-96
+ */
+export function serialFromDeviceId(id: string): string | null {
+	// @KI_HINWEIS: The gateway names devices by their SGTIN-96 EPC (24 hex digits). The last 38 bits are the
+	// serial number the GARDENA app/cloud shows, padded to 8 digits (verified: 3034F8EE90126D400003C557 → 00247127).
+	if (!/^30[0-9A-Fa-f]{22}$/.test(id)) {
+		return null;
+	}
+	const serial = BigInt(`0x${id}`) & ((1n << 38n) - 1n);
+	return serial.toString().padStart(8, '0');
+}
+
 /** Root folder of all devices */
 export const DEVICES_FOLDER = 'devices';
 
@@ -93,7 +109,9 @@ export class DeviceManager {
 		let renamed = 0;
 		for (const dev of this.devices.values()) {
 			const serial = fieldValue(getField(dev.tree, 'device', '0', 'serial_number'));
-			const name = serial !== null ? namesBySerial.get(String(serial)) : undefined;
+			const name =
+				(serial !== null ? namesBySerial.get(String(serial)) : undefined) ??
+				namesBySerial.get(serialFromDeviceId(dev.id) ?? '');
 			if (!name) {
 				continue;
 			}
