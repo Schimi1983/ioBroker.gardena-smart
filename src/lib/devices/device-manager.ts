@@ -1,0 +1,311 @@
+import type { GatewayClient } from '../local/gateway-client';
+import { type GatewayEvent, deleteAtPath, encodeStringArray, mergeAtPath } from '../local/protocol';
+import { GEN1_COMMAND, GEN2_COMMAND_SOURCE, MODEL_KINDS } from './models';
+import { type DeviceSnapshot, type StateSpec, buildDevice, buildRawStates, deviceName } from './states';
+
+/** Root folder of all devices */
+export const DEVICES_FOLDER = 'devices';
+
+/** Maximum watering / switch-on time the gateway accepts: 10 hours */
+const MAX_SECONDS = 36_000;
+
+/**
+ * Keeps the data of all devices, creates the ioBroker objects and executes commands.
+ */
+export class DeviceManager {
+	private readonly devices = new Map<string, DeviceSnapshot>();
+	/** ids of objects already created/updated in this adapter run */
+	private readonly knownObjects = new Set<string>();
+
+	/**
+	 * @param adapter adapter instance
+	 * @param client connection to the gateway
+	 * @param rawStates also create states for all raw values (expert option)
+	 */
+	public constructor(
+		private readonly adapter: ioBroker.Adapter,
+		private readonly client: GatewayClient,
+		private readonly rawStates: boolean,
+	) {}
+
+	/** Number of known devices */
+	public get count(): number {
+		return this.devices.size;
+	}
+
+	/**
+	 * Takes over the result of a discovery and updates all devices.
+	 *
+	 * @param discovered devices reported by the gateway
+	 */
+	public async sync(
+		discovered: Map<string, { service: 'lemonbeatd' | 'lwm2mserver'; tree: Record<string, unknown> }>,
+	): Promise<void> {
+		await this.ensureObject(DEVICES_FOLDER, { type: 'folder', common: { name: 'Devices' }, native: {} });
+		for (const [id, { service, tree }] of discovered) {
+			const modelNumber = String((tree as any)?.device?.['0']?.model_number?.vs ?? '');
+			const kind = MODEL_KINDS[modelNumber] ?? 'unknown';
+			if (kind === 'unknown') {
+				this.adapter.log.info(
+					`Device ${id} with model number ${modelNumber || '?'} is not supported yet, only general information is shown. ` +
+						'Please open an issue on GitHub with the "raw" values (enable "raw values" in the settings).',
+				);
+			}
+			const dev: DeviceSnapshot = { id, kind, service, tree };
+			this.devices.set(id, dev);
+			await this.updateDevice(dev, true);
+		}
+	}
+
+	/**
+	 * Applies an event pushed by the gateway.
+	 *
+	 * @param event gateway event
+	 * @returns false if the device is unknown (a new discovery is needed)
+	 */
+	public async applyEvent(event: GatewayEvent): Promise<boolean> {
+		const deviceId = event.entity.device;
+		if (!deviceId) {
+			return true;
+		}
+		const dev = this.devices.get(deviceId);
+		if (!dev) {
+			return false;
+		}
+		if (event.op === 'delete') {
+			deleteAtPath(dev.tree, event.entity.path);
+		} else if (event.payload) {
+			mergeAtPath(dev.tree, event.entity.path, event.payload, event.op === 'overwrite');
+		}
+		await this.updateDevice(dev, false);
+		return true;
+	}
+
+	/** Sets all devices offline (e.g. connection to the gateway lost). */
+	public async setAllOffline(): Promise<void> {
+		for (const id of this.devices.keys()) {
+			await this.adapter.setStateChangedAsync(`${DEVICES_FOLDER}.${id}.info.online`, false, true);
+		}
+	}
+
+	private async updateDevice(dev: DeviceSnapshot, full: boolean): Promise<void> {
+		const base = `${DEVICES_FOLDER}.${dev.id}`;
+		await this.ensureObject(base, {
+			type: 'device',
+			common: {
+				name: deviceName(dev),
+				statusStates: { onlineId: `${this.adapter.namespace}.${base}.info.online` },
+			},
+			native: { kind: dev.kind, service: dev.service },
+		});
+		const { channels, states } = buildDevice(dev);
+		for (const ch of channels) {
+			await this.ensureObject(`${base}.${ch.id}`, { type: 'channel', common: { name: ch.name }, native: {} });
+		}
+		const all: StateSpec[] = this.rawStates ? [...states, ...buildRawStates(dev)] : states;
+		if (this.rawStates) {
+			await this.ensureObject(`${base}.raw`, {
+				type: 'channel',
+				common: { name: 'Raw values (expert)' },
+				native: {},
+			});
+		}
+		for (const spec of all) {
+			const id = `${base}.${spec.id}`;
+			if (!this.knownObjects.has(id)) {
+				await this.adapter.extendObject(id, {
+					type: 'state',
+					common: spec.common as ioBroker.StateCommon,
+					native: {},
+				});
+				this.knownObjects.add(id);
+				if (spec.value === undefined && spec.common.def !== undefined) {
+					// adapter owned setting (e.g. duration): initialise once
+					const existing = await this.adapter.getStateAsync(id);
+					if (!existing || existing.val === null) {
+						await this.adapter.setState(id, spec.common.def as ioBroker.StateValue, true);
+					}
+				}
+			}
+			if (spec.value !== undefined && (spec.value !== null || full)) {
+				await this.adapter.setStateChangedAsync(id, {
+					val: spec.value,
+					ack: true,
+					...(spec.ts ? { ts: spec.ts } : {}),
+				});
+			}
+		}
+	}
+
+	private async ensureObject(id: string, obj: ioBroker.SettableObject): Promise<void> {
+		if (this.knownObjects.has(id)) {
+			return;
+		}
+		if (obj.type === 'device') {
+			// keep a name the user has changed
+			await this.adapter.setObjectNotExistsAsync(id, obj);
+			await this.adapter.extendObject(id, {
+				native: obj.native,
+				common: { statusStates: (obj.common as any).statusStates },
+			});
+		} else {
+			await this.adapter.extendObject(id, obj);
+		}
+		this.knownObjects.add(id);
+	}
+
+	/**
+	 * Executes a command written by the user.
+	 *
+	 * @param id full state id
+	 * @param state new state (ack = false)
+	 */
+	public async handleCommand(id: string, state: ioBroker.State): Promise<void> {
+		const rel = id.slice(this.adapter.namespace.length + 1);
+		const parts = rel.split('.');
+		if (parts[0] !== DEVICES_FOLDER || parts.length < 4) {
+			return;
+		}
+		const dev = this.devices.get(parts[1]);
+		if (!dev) {
+			this.adapter.log.warn(`Unknown device ${parts[1]}`);
+			return;
+		}
+		const channel = parts[2];
+		const name = parts[3];
+		const gen1 = dev.service === 'lemonbeatd';
+
+		try {
+			if (channel === 'info' && name === 'identify') {
+				if (gen1) {
+					await this.gen1Command(dev, GEN1_COMMAND.identify);
+				} else {
+					await this.client.execute(dev.service, dev.id, 'sg_common/0/identify');
+				}
+			} else if (channel === 'closeAll') {
+				if (gen1) {
+					await this.gen1Command(dev, GEN1_COMMAND.closeAllValves);
+				} else {
+					await this.client.execute(dev.service, dev.id, 'sg_common/0/stop_all_actuators', {
+						as: encodeStringArray([GEN2_COMMAND_SOURCE]),
+					});
+				}
+			} else if (/^valve\d+$/.test(channel)) {
+				await this.valveCommand(dev, Number(channel.slice(5)), name, state, id);
+				return;
+			} else if (channel === 'sensor' && name === 'measure') {
+				await this.gen1Command(dev, GEN1_COMMAND.measureSoilMoisture);
+				await this.gen1Command(dev, GEN1_COMMAND.measureSoilTemperature);
+				if (dev.kind === 'sensor1') {
+					await this.gen1Command(dev, GEN1_COMMAND.measureLight);
+					await this.gen1Command(dev, GEN1_COMMAND.measureAmbientTemperature);
+				}
+			} else if (channel === 'power') {
+				await this.powerCommand(dev, name, state, id);
+				return;
+			} else {
+				return;
+			}
+			this.adapter.log.debug(`Command ${rel} sent`);
+		} catch (err) {
+			this.adapter.log.warn(`Command ${rel} failed: ${(err as Error).message}`);
+		}
+	}
+
+	private async valveCommand(
+		dev: DeviceSnapshot,
+		valve: number,
+		name: string,
+		state: ioBroker.State,
+		id: string,
+	): Promise<void> {
+		const base = id.slice(0, id.lastIndexOf('.'));
+		const gen1 = dev.service === 'lemonbeatd';
+		if (name === 'duration') {
+			await this.adapter.setState(id, state.val, true);
+			return;
+		}
+		try {
+			if (name === 'open') {
+				const open = state.val === true || state.val === 'true' || state.val === 1;
+				const seconds = open ? await this.durationSeconds(`${base}.duration`, 30) : 0;
+				if (gen1) {
+					await this.client.write(dev.service, dev.id, `lemonbeat/0/watering_timer_${valve}`, {
+						vi: seconds,
+					});
+				} else if (open) {
+					await this.client.execute(dev.service, dev.id, `actuator/${valve - 1}/start`, {
+						as: encodeStringArray([GEN2_COMMAND_SOURCE, String(seconds)]),
+					});
+				} else {
+					await this.client.execute(dev.service, dev.id, `actuator/${valve - 1}/stop`, {
+						as: encodeStringArray([GEN2_COMMAND_SOURCE]),
+					});
+				}
+				this.adapter.log.info(
+					open
+						? `Valve ${valve} of ${deviceName(dev)} opened for ${seconds / 60} min`
+						: `Valve ${valve} of ${deviceName(dev)} closed`,
+				);
+				// the gateway confirms the new valve state with an event (ack = true)
+			} else if (name === 'buttonTime') {
+				const seconds = Math.min(MAX_SECONDS, Math.max(0, Math.round(Number(state.val) * 60)));
+				if (gen1) {
+					await this.client.write(dev.service, dev.id, 'lemonbeat/0/button_config_time', { vi: seconds });
+				} else {
+					await this.client.write(dev.service, dev.id, `actuator/${valve - 1}/default_duration_seconds`, {
+						vi: seconds,
+					});
+				}
+			}
+		} catch (err) {
+			this.adapter.log.warn(`Valve ${valve} of ${deviceName(dev)}: ${(err as Error).message}`);
+			await this.restore(dev, id);
+		}
+	}
+
+	private async powerCommand(dev: DeviceSnapshot, name: string, state: ioBroker.State, id: string): Promise<void> {
+		if (name === 'duration') {
+			await this.adapter.setState(id, state.val, true);
+			return;
+		}
+		if (name !== 'on') {
+			return;
+		}
+		try {
+			const on = state.val === true || state.val === 'true' || state.val === 1;
+			const seconds = on ? await this.durationSeconds(id.replace(/\.on$/, '.duration'), 60) : 0;
+			await this.client.write(dev.service, dev.id, 'lemonbeat/0/power_timer', { vi: seconds });
+			this.adapter.log.info(
+				on ? `${deviceName(dev)} switched on for ${seconds / 60} min` : `${deviceName(dev)} switched off`,
+			);
+		} catch (err) {
+			this.adapter.log.warn(`${deviceName(dev)}: ${(err as Error).message}`);
+			await this.restore(dev, id);
+		}
+	}
+
+	private async durationSeconds(durationId: string, defaultMinutes: number): Promise<number> {
+		const st = await this.adapter.getStateAsync(durationId);
+		const minutes = typeof st?.val === 'number' && st.val > 0 ? st.val : defaultMinutes;
+		return Math.min(MAX_SECONDS, Math.max(1, Math.round(minutes * 60)));
+	}
+
+	private async gen1Command(dev: DeviceSnapshot, command: number): Promise<void> {
+		await this.client.write('lemonbeatd', dev.id, 'lemonbeat/0/command', { vi: command });
+	}
+
+	/**
+	 * Writes the actual device value back after a failed command.
+	 *
+	 * @param dev device
+	 * @param id full state id
+	 */
+	private async restore(dev: DeviceSnapshot, id: string): Promise<void> {
+		const rel = id.slice(`${this.adapter.namespace}.${DEVICES_FOLDER}.${dev.id}.`.length);
+		const spec = buildDevice(dev).states.find(s => s.id === rel);
+		if (spec && spec.value !== undefined) {
+			await this.adapter.setState(id, { val: spec.value, ack: true });
+		}
+	}
+}

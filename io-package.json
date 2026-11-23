@@ -1,107 +1,208 @@
 {
-	"common": {
-		"name": "gardena-smart",
-		"version": "0.0.1",
-		"news": {
-			"0.0.1": {
-				"en": "initial release",
-				"de": "Erstveröffentlichung",
-				"ru": "Начальная версия",
-				"pt": "lançamento inicial",
-				"nl": "Eerste uitgave",
-				"fr": "Première version",
-				"it": "Versione iniziale",
-				"es": "Versión inicial",
-				"pl": "Pierwsze wydanie",
-				"uk": "Початкова версія",
-				"zh-cn": "首次出版"
-			}
-		},
-		"titleLang": {
-			"en": "GARDENA smart system",
-			"de": "GARDENA smart system",
-			"ru": "GARDENA smart system",
-			"pt": "GARDENA smart system",
-			"nl": "GARDENA smart system",
-			"fr": "GARDENA smart system",
-			"it": "GARDENA smart system",
-			"es": "GARDENA smart system",
-			"pl": "GARDENA smart system",
-			"uk": "GARDENA smart system",
-			"zh-cn": "GARDENA smart system"
-		},
-		"desc": {
-			"en": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-			"de": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-			"ru": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-			"pt": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-			"nl": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-			"fr": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-			"it": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-			"es": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-			"pl": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-			"uk": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
-			"zh-cn": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)"
-		},
-		"authors": ["Schimi <github@world-mg.de>"],
-		"keywords": ["gardena", "smart system", "irrigation", "water control", "sensor", "garden"],
-		"licenseInformation": {
-			"type": "free",
-			"license": "MIT"
-		},
-		"platform": "Javascript/Node.js",
-		"icon": "gardena-smart.png",
-		"enabled": true,
-		"extIcon": "https://raw.githubusercontent.com/Schimi1983/ioBroker.gardena-smart/main/admin/gardena-smart.png",
-		"readme": "https://github.com/Schimi1983/ioBroker.gardena-smart/blob/main/README.md",
-		"loglevel": "info",
-		"tier": 3,
-		"mode": "daemon",
-		"type": "garden",
-		"compact": true,
-		"connectionType": "local",
-		"dataSource": "push",
-		"adminUI": {
-			"config": "json"
-		},
-		"dependencies": [
-			{
-				"js-controller": ">=6.0.11"
-			}
-		],
-		"globalDependencies": [
-			{
-				"admin": ">=7.0.23"
-			}
-		]
-	},
-	"native": {
-		"host": "",
-		"port": 8443,
-		"password": ""
-	},
-	"objects": [],
-	"instanceObjects": [
-		{
-			"_id": "info",
-			"type": "channel",
-			"common": {
-				"name": "Information"
-			},
-			"native": {}
-		},
-		{
-			"_id": "info.connection",
-			"type": "state",
-			"common": {
-				"role": "indicator.connected",
-				"name": "Device or service connected",
-				"type": "boolean",
-				"read": true,
-				"write": false,
-				"def": false
-			},
-			"native": {}
-		}
-	]
+  "common": {
+    "name": "gardena-smart",
+    "version": "0.0.1",
+    "news": {
+      "0.0.1": {
+        "en": "Initial release: local connection to the GARDENA smart Gateway",
+        "de": "Erste Version: lokale Verbindung zum GARDENA smart Gateway",
+        "ru": "Initial release",
+        "pt": "Initial release",
+        "nl": "Initial release",
+        "fr": "Initial release",
+        "it": "Initial release",
+        "es": "Initial release",
+        "pl": "Initial release",
+        "uk": "Initial release",
+        "zh-cn": "Initial release"
+      }
+    },
+    "titleLang": {
+      "en": "GARDENA smart system",
+      "de": "GARDENA smart system",
+      "ru": "GARDENA smart system",
+      "pt": "GARDENA smart system",
+      "nl": "GARDENA smart system",
+      "fr": "GARDENA smart system",
+      "it": "GARDENA smart system",
+      "es": "GARDENA smart system",
+      "pl": "GARDENA smart system",
+      "uk": "GARDENA smart system",
+      "zh-cn": "GARDENA smart system"
+    },
+    "desc": {
+      "en": "Control and monitor GARDENA smart system devices locally via the smart Gateway (no cloud needed)",
+      "de": "GARDENA smart system Geräte lokal über das smart Gateway steuern und überwachen (ohne Cloud)",
+      "ru": "Локальное управление устройствами GARDENA smart system через smart Gateway (без облака)",
+      "pt": "Controle e monitore dispositivos GARDENA smart system localmente através do smart Gateway (sem nuvem)",
+      "nl": "GARDENA smart system-apparaten lokaal bedienen en bewaken via de smart Gateway (zonder cloud)",
+      "fr": "Contrôler et surveiller localement les appareils GARDENA smart system via la smart Gateway (sans cloud)",
+      "it": "Controlla e monitora localmente i dispositivi GARDENA smart system tramite lo smart Gateway (senza cloud)",
+      "es": "Controle y supervise localmente los dispositivos GARDENA smart system a través del smart Gateway (sin nube)",
+      "pl": "Lokalne sterowanie i monitorowanie urządzeń GARDENA smart system przez smart Gateway (bez chmury)",
+      "uk": "Локальне керування пристроями GARDENA smart system через smart Gateway (без хмари)",
+      "zh-cn": "通过 smart Gateway 在本地控制和监控 GARDENA smart system 设备（无需云）"
+    },
+    "authors": [
+      "Schimi <github@world-mg.de>"
+    ],
+    "keywords": [
+      "gardena",
+      "smart system",
+      "irrigation",
+      "water control",
+      "sensor",
+      "garden"
+    ],
+    "licenseInformation": {
+      "type": "free",
+      "license": "MIT"
+    },
+    "platform": "Javascript/Node.js",
+    "icon": "gardena-smart.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/Schimi1983/ioBroker.gardena-smart/main/admin/gardena-smart.png",
+    "readme": "https://github.com/Schimi1983/ioBroker.gardena-smart/blob/main/README.md",
+    "loglevel": "info",
+    "tier": 3,
+    "mode": "daemon",
+    "type": "garden",
+    "compact": true,
+    "connectionType": "local",
+    "dataSource": "push",
+    "adminUI": {
+      "config": "json"
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=6.0.11"
+      }
+    ],
+    "globalDependencies": [
+      {
+        "admin": ">=7.0.23"
+      }
+    ]
+  },
+  "native": {
+    "host": "",
+    "port": 8443,
+    "password": "",
+    "rawStates": false
+  },
+  "objects": [],
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "channel",
+      "common": {
+        "name": {
+          "en": "Information",
+          "de": "Informationen"
+        }
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "role": "indicator.connected",
+        "name": {
+          "en": "Connected to the GARDENA smart Gateway",
+          "de": "Mit dem GARDENA smart Gateway verbunden"
+        },
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.gateway",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Gateway name",
+          "de": "Name des Gateways"
+        },
+        "type": "string",
+        "role": "text",
+        "read": true,
+        "write": false,
+        "def": ""
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.devices",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Number of devices",
+          "de": "Anzahl Geräte"
+        },
+        "type": "number",
+        "role": "value",
+        "read": true,
+        "write": false,
+        "def": 0
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.certificateFingerprint",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Trusted gateway certificate (SHA-256)",
+          "de": "Vertrautes Gateway-Zertifikat (SHA-256)"
+        },
+        "type": "string",
+        "role": "text",
+        "read": true,
+        "write": false,
+        "def": ""
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.certificate",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Trusted gateway certificate (PEM)",
+          "de": "Vertrautes Gateway-Zertifikat (PEM)"
+        },
+        "type": "string",
+        "role": "text",
+        "read": true,
+        "write": false,
+        "def": ""
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.trustNewCertificate",
+      "type": "state",
+      "common": {
+        "name": {
+          "en": "Trust new gateway certificate (after gateway reset)",
+          "de": "Neues Gateway-Zertifikat vertrauen (nach Gateway-Reset)"
+        },
+        "type": "boolean",
+        "role": "button",
+        "read": false,
+        "write": true
+      },
+      "native": {}
+    }
+  ],
+  "encryptedNative": [
+    "password"
+  ],
+  "protectedNative": [
+    "password"
+  ]
 }

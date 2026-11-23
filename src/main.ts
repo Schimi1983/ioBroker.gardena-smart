@@ -1,15 +1,31 @@
 /*
+ * ioBroker adapter for the GARDENA smart system
  * Created with @iobroker/create-adapter v3.1.5
  */
 
-// The adapter-core module gives you access to the core ioBroker functions
-// you need to create an adapter
 import * as utils from '@iobroker/adapter-core';
+import { DeviceManager } from './lib/devices/device-manager';
+import { type GatewayCertificate, GatewayClient, type Timers } from './lib/local/gateway-client';
+import type { GatewayEvent } from './lib/local/protocol';
 
-// Load your modules here, e.g.:
-// import * as fs from 'fs';
+/** States the user can write (subscribed, all others are only written by the adapter). */
+const COMMAND_PATTERNS = [
+	'devices.*.open',
+	'devices.*.duration',
+	'devices.*.buttonTime',
+	'devices.*.identify',
+	'devices.*.closeAll',
+	'devices.*.measure',
+	'devices.*.on',
+	'info.trustNewCertificate',
+];
 
 class GardenaSmart extends utils.Adapter {
+	private client: GatewayClient | undefined;
+	private devices: DeviceManager | undefined;
+	private rediscoverTimer: ioBroker.Timeout | undefined;
+	private discovering = false;
+
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
 			...options,
@@ -17,151 +33,149 @@ class GardenaSmart extends utils.Adapter {
 		});
 		this.on('ready', this.onReady.bind(this));
 		this.on('stateChange', this.onStateChange.bind(this));
-		// this.on('objectChange', this.onObjectChange.bind(this));
-		// this.on('message', this.onMessage.bind(this));
 		this.on('unload', this.onUnload.bind(this));
 	}
 
-	/**
-	 * Is called when databases are connected and adapter received configuration.
-	 */
 	private async onReady(): Promise<void> {
-		// Initialize your adapter here
+		await this.setState('info.connection', false, true);
 
-		// Reset the connection indicator during startup
-		this.setState('info.connection', false, true);
+		const host = (this.config.host ?? '').trim();
+		const port = Number(this.config.port) || 8443;
+		if (!host || !this.config.password) {
+			this.log.error(
+				'Please enter the address and the password of your GARDENA smart Gateway in the adapter settings.',
+			);
+			return;
+		}
 
-		// The adapters config (in the instance object everything under the attribute "native") is accessible via
-		// this.config:
-		this.log.debug('config host: ${this.config.host}');
-		this.log.debug('config port: ${this.config.port}');
-		this.log.debug('config password: ${this.config.password}');
-
-		/*
-		For every state in the system there has to be also an object of type state
-		Here a simple template for a boolean variable named "testVariable"
-		Because every adapter instance uses its own unique namespace variable names can't collide with other adapters variables
-
-		IMPORTANT: State roles should be chosen carefully based on the state's purpose.
-		           Please refer to the state roles documentation for guidance:
-		           https://www.iobroker.net/#en/documentation/dev/stateroles.md
-		*/
-		await this.setObjectNotExistsAsync('testVariable', {
-			type: 'state',
-			common: {
-				name: 'testVariable',
-				type: 'boolean',
-				role: 'indicator',
-				read: true,
-				write: true,
-			},
-			native: {},
-		});
-
-		// In order to get state updates, you need to subscribe to them. The following line adds a subscription for our variable we have created above.
-		this.subscribeStates('testVariable');
-		// You can also add a subscription for multiple states. The following line watches all states starting with "lights."
-		// this.subscribeStates('lights.*');
-		// Or, if you really must, you can also watch all states. Don't do this if you don't need to. Otherwise this will cause a lot of unnecessary load on the system:
-		// this.subscribeStates('*');
-
-		/*
-			setState examples
-			you will notice that each setState will cause the stateChange event to fire (because of above subscribeStates cmd)
-		*/
-		// the variable testVariable is set to true as command (ack=false)
-		await this.setState('testVariable', true);
-
-		// same thing, but the value is flagged "ack"
-		// ack should be always set to true if the value is received from or acknowledged from the target system
-		await this.setState('testVariable', { val: true, ack: true });
-
-		// same thing, but the state is deleted after 30s (getState will return null afterwards)
-		await this.setState('testVariable', { val: true, ack: true, expire: 30 });
-
-		// examples for the checkPassword/checkGroup functions
-		const pwdResult = await this.checkPasswordAsync('admin', 'iobroker');
-		this.log.info(`check user admin pw iobroker: ${JSON.stringify(pwdResult)}`);
-
-		const groupResult = await this.checkGroupAsync('admin', 'admin');
-		this.log.info(`check group user admin group admin: ${JSON.stringify(groupResult)}`);
+		for (const pattern of COMMAND_PATTERNS) {
+			this.subscribeStates(pattern);
+		}
+		this.startClient(host, port);
 	}
 
 	/**
-	 * Is called when adapter shuts down - callback has to be called under any circumstances!
+	 * Creates the gateway connection. A stored certificate is pinned, otherwise it is trusted on first use.
 	 *
-	 * @param callback - Callback function
+	 * @param host address of the gateway
+	 * @param port port of the local API
 	 */
+	private startClient(host: string, port: number): void {
+		void (async () => {
+			const stored = await this.getStateAsync('info.certificate');
+			const certificatePem =
+				typeof stored?.val === 'string' && stored.val.includes('BEGIN CERTIFICATE') ? stored.val : undefined;
+
+			const timers: Timers = {
+				setTimeout: (cb, ms) => this.setTimeout(cb, ms),
+				clearTimeout: h => this.clearTimeout(h as ioBroker.Timeout),
+				setInterval: (cb, ms) => this.setInterval(cb, ms),
+				clearInterval: h => this.clearInterval(h as ioBroker.Interval),
+			};
+			const client = new GatewayClient({
+				host,
+				port,
+				password: this.config.password,
+				certificatePem,
+				log: this.log,
+				timers,
+			});
+			this.client = client;
+			this.devices = new DeviceManager(this, client, !!this.config.rawStates);
+
+			client.on('certificate', (cert: GatewayCertificate) => void this.storeCertificate(cert));
+			client.on('connected', () => void this.onConnected());
+			client.on('disconnected', () => void this.setState('info.connection', false, true));
+			client.on('authFailed', () => void this.setState('info.connection', false, true));
+			client.on('certificateMismatch', () => void this.setState('info.connection', false, true));
+			client.on('event', (event: GatewayEvent) => void this.onGatewayEvent(event));
+			if (certificatePem) {
+				const fp = await this.getStateAsync('info.certificateFingerprint');
+				this.log.debug(`Using pinned gateway certificate ${String(fp?.val ?? '')}`);
+			}
+			client.start();
+		})();
+	}
+
+	private async storeCertificate(cert: GatewayCertificate): Promise<void> {
+		await this.setState('info.certificate', cert.pem, true);
+		await this.setState('info.certificateFingerprint', cert.fingerprint, true);
+		if (cert.hostname) {
+			await this.setState('info.gateway', cert.hostname, true);
+		}
+	}
+
+	private async onConnected(): Promise<void> {
+		await this.setState('info.connection', true, true);
+		await this.discover();
+	}
+
+	/** Reads all devices from the gateway and updates the objects. */
+	private async discover(): Promise<void> {
+		if (!this.client || !this.devices || this.discovering) {
+			return;
+		}
+		this.discovering = true;
+		try {
+			const found = await this.client.discover();
+			await this.devices.sync(found);
+			await this.setState('info.devices', this.devices.count, true);
+			this.log.info(`${found.size} GARDENA device(s) found`);
+		} catch (err) {
+			this.log.warn(`Reading the devices failed: ${(err as Error).message}`);
+		} finally {
+			this.discovering = false;
+		}
+	}
+
+	private async onGatewayEvent(event: GatewayEvent): Promise<void> {
+		if (!this.devices) {
+			return;
+		}
+		try {
+			const known = await this.devices.applyEvent(event);
+			if (!known && !this.rediscoverTimer) {
+				// a new device was added to the gateway: read the device list again (debounced)
+				this.rediscoverTimer = this.setTimeout(() => {
+					this.rediscoverTimer = undefined;
+					void this.discover();
+				}, 5_000);
+			}
+		} catch (err) {
+			this.log.warn(`Processing a gateway message failed: ${(err as Error).message}`);
+		}
+	}
+
+	private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
+		if (!state || state.ack) {
+			return;
+		}
+		if (id === `${this.namespace}.info.trustNewCertificate`) {
+			this.log.info('Trusting the next certificate the gateway presents');
+			this.client?.stop();
+			await this.setState('info.certificate', '', true);
+			await this.setState('info.certificateFingerprint', '', true);
+			this.startClient((this.config.host ?? '').trim(), Number(this.config.port) || 8443);
+			return;
+		}
+		if (!this.client?.connected) {
+			this.log.warn('Command not possible: no connection to the GARDENA smart Gateway');
+			return;
+		}
+		await this.devices?.handleCommand(id, state);
+	}
+
 	private onUnload(callback: () => void): void {
 		try {
-			// Here you must clear all timeouts or intervals that may still be active
-			// clearTimeout(timeout1);
-			// clearTimeout(timeout2);
-			// ...
-			// clearInterval(interval1);
-
+			this.client?.stop();
+			void this.setState('info.connection', false, true);
 			callback();
-		} catch (error) {
-			this.log.error(`Error during unloading: ${(error as Error).message}`);
+		} catch {
 			callback();
 		}
 	}
-
-	// If you need to react to object changes, uncomment the following block and the corresponding line in the constructor.
-	// You also need to subscribe to the objects with `this.subscribeObjects`, similar to `this.subscribeStates`.
-	// /**
-	//  * Is called if a subscribed object changes
-	//  */
-	// private onObjectChange(id: string, obj: ioBroker.Object | null | undefined): void {
-	// 	if (obj) {
-	// 		// The object was changed
-	// 		this.log.info(`object ${id} changed: ${JSON.stringify(obj)}`);
-	// 	} else {
-	// 		// The object was deleted
-	// 		this.log.info(`object ${id} deleted`);
-	// 	}
-	// }
-
-	/**
-	 * Is called if a subscribed state changes
-	 *
-	 * @param id - State ID
-	 * @param state - State object
-	 */
-	private onStateChange(id: string, state: ioBroker.State | null | undefined): void {
-		if (state) {
-			// The state was changed
-			this.log.info(`state ${id} changed: ${state.val} (ack = ${state.ack})`);
-
-			if (state.ack === false) {
-				// This is a command from the user (e.g., from the UI or other adapter)
-				// and should be processed by the adapter
-				this.log.info(`User command received for ${id}: ${state.val}`);
-
-				// TODO: Add your control logic here
-			}
-		} else {
-			// The object was deleted or the state value has expired
-			this.log.info(`state ${id} deleted`);
-		}
-	}
-	// If you need to accept messages in your adapter, uncomment the following block and the corresponding line in the constructor.
-	// /**
-	//  * Some message was sent to this instance over message box. Used by email, pushover, text2speech, ...
-	//  * Using this method requires "common.messagebox" property to be set to true in io-package.json
-	//  */
-	//
-	// private onMessage(obj: ioBroker.Message): void {
-	// 	if (typeof obj === 'object' && obj.message) {
-	// 		if (obj.command === 'send') {
-	// 			// e.g. send email or pushover or whatever
-	// 			this.log.info('send command');
-	// 			// Send response in callback if required
-	// 			if (obj.callback) this.sendTo(obj.from, obj.command, 'Message received', obj.callback);
-	// 		}
-	// 	}
-	// }
 }
+
 if (require.main !== module) {
 	// Export the constructor in compact mode
 	module.exports = (options: Partial<utils.AdapterOptions> | undefined) => new GardenaSmart(options);
