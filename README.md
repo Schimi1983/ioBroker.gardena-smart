@@ -1,4 +1,4 @@
-![Logo](admin/gardena-smart.png)
+<img src="admin/gardena-smart.png" width="100" alt="Logo">
 
 # ioBroker.gardena-smart
 
