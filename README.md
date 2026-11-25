@@ -128,6 +128,12 @@ Bug reports and ideas in the [issues](https://github.com/Schimi1983/ioBroker.gar
 - (Schimi1983) Water Control: end of the current watering, schedules and schedule pause (read only)
 - (Schimi1983) Optional: device names from the GARDENA app via your own App Key, with request counter for the weekly limit
 
+### 0.0.1 (2026-11-21)
+
+- (Schimi1983) Initial development version (adapter template, not published on npm)
+
+Older changes: [CHANGELOG_OLD.md](CHANGELOG_OLD.md)
+
 ## License
 
 MIT License
