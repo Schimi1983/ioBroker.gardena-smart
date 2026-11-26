@@ -16,6 +16,10 @@ updates:
       # @types/node must match the minimum supported Node.js version
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
+      # typescript-eslint (used by @iobroker/eslint-config) supports TypeScript < 6.1 only.
+      # Update TypeScript manually once the ioBroker ESLint config supports TypeScript 7.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
